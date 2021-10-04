@@ -1,12 +1,12 @@
 name: mobile_services
 description: Mobile Services for SAP Product
 version: 0.0.1
-homepage:
+homepage: https://github.com/mobui/mobile_services
+
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.14.0 <3.0.0"
   flutter: ">=1.17.0"
-
 
 dependencies:
   flutter:
@@ -16,6 +16,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  mockito: ^5.0.16
+  build_runner: ^2.1.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

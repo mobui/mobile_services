@@ -1,0 +1,137 @@
+@host = agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com
+@appId = com.agroinvest.mobile.repair
+@delim  = #
+
+
+### Регистрация
+POST https://{{host}}/odata/applications/v4/{{appId}}/Connections
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+{
+  "DeviceType": "Android",
+  "Capability": [
+      {
+          "Category":"push",
+          "CapabilityName": "Simple",
+          "CapabilityValue": "Example"
+      }
+  ]
+}
+
+
+### Получение информации о регистрации
+GET https://{{host}}/odata/applications/v4/{{appId}}/Connections('cf8a95a7-9bd6-42f8-8623-a968ed6762ae')
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+### Получение измененной информации о регистрации (Не рабоатет)
+GET https://{{host}}/odata/applications/v4/{{appId}}/Connections('cf8a95a7-9bd6-42f8-8623-a968ed6762ae')?If-None-Match="2021-08-07 21:43:16.695Z"
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+### Получение списка возможностей
+GET https://{{host}}/odata/applications/v4/{{appId}}/Connections('5c253c3c-acbb-4122-a7cc-5bc212cc5ac4')/Capability
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+### Публикация клиентских логов
+POST  https://{{host}}/mobileservices/application/{{appId}}/clientlogs/v1/runtime/log/application/{{appId}}?deviceId=123123
+Content-Type: text/plain
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+{{delim}}2014-07-01T17:16:08.637+02:00{{delim}}ERROR{{delim}}6ba20c96-893c-4c67-52ef-71c21c6bbe21{{delim}}Source{{delim}}Location{{delim}}Message{{delim}}
+
+### Пуш уведомления 
+GET https://{{host}}/mobileservices/push/v1/runtime/applications/{{appId}}/pushconfigurations/os/android/pushid/
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+###
+POST https://{{host}}/mobileservices/push/v1/runtime/applications/{{appId}}/pushconfigurations/os/android/pushid/12312312
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+{
+    "pushToken": "asdasdasdsa"
+}
+
+### Получить информацю о ролях пользователя (при использовании авторизации SAP  безполезна)
+GET https://{{host}}/mobileservices/application/{{appId}}/roleservice/application/{{appId}}/v2/Me
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+### Получить ресурс (Прикольная штука можно распрострянять документы и шаблоны)
+GET https://{{host}}/mobileservices/application/{{appId}}/bundles/v1/runtime/bundle/application/{{appId}}/bundle/simple/version/1
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+
+
+### Данные
+GET https://{{host}}/{{appId}}?SPNego=disabled
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+###
+GET https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test1
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+### Данные 2
+GET https://{{host}}/{{appId}}/Notifications
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/com.agroinvest.mobile.repair
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test2
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+
+
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test1
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test2
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test3
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+###
+GET  https://agroinvest-dev002-dev-com-agroinvest-mobile-repair.cfapps.eu10.hana.ondemand.com/test4
+Content-Type: application/json
+Accept: application/json
+Authorization: Basic S.CHEBOTAREV:#EDC3edc
+X-SMP-APPCID: cf8a95a7-9bd6-42f8-8623-a968ed6762ae
+

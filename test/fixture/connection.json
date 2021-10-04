@@ -1,0 +1,116 @@
+{
+  "d": {
+    "AndroidGcmPushEnabled": true,
+    "AndroidGcmRegistrationId": null,
+    "AndroidGcmSenderId": null,
+    "ApnsDeviceToken": null,
+    "ApnsPushEnable": true,
+    "ApplicationConnectionId": "7e607988-1b29-4b2f-b357-dd2758bbec75",
+    "ApplicationVersion": "1.0",
+    "BlackberryBESListenerPort": 0,
+    "BlackberryDevicePin": null,
+    "BlackberryListenerType": 0,
+    "BlackberryPushAppID": null,
+    "BlackberryPushBaseURL": null,
+    "BlackberryPushEnabled": false,
+    "BlackberryPushListenerPort": 0,
+    "BlockDisconnectedPeriod": 0,
+    "BlockWipeEnabled": false,
+    "Capability": {
+      "results": [
+        {
+          "ApplicationConnectionId": "7e607988-1b29-4b2f-b357-dd2758bbec75",
+          "CapabilityName": "Simple",
+          "CapabilityValue": "Example",
+          "Category": "push",
+          "__metadata": {
+            "id": "https://agroinvest-dev002-dev-simple.cfapps.eu10.hana.ondemand.com/odata/applications/v4/simple/Capabilities(ApplicationConnectionId='7e607988-1b29-4b2f-b357-dd2758bbec75',Category='push',CapabilityName='Simple')",
+            "uri": "https://agroinvest-dev002-dev-simple.cfapps.eu10.hana.ondemand.com/odata/applications/v4/simple/Capabilities(ApplicationConnectionId='7e607988-1b29-4b2f-b357-dd2758bbec75',Category='push',CapabilityName='Simple')"
+          }
+        }
+      ]
+    },
+    "CollectClientUsageReports": true,
+    "ConnectionLogLevel": "NONE",
+    "CreatedAt": "\/Date(1632834466904)\/",
+    "CustomCustom1": null,
+    "CustomCustom2": null,
+    "CustomCustom3": null,
+    "CustomCustom4": null,
+    "CustomizationBundleId": null,
+    "DeviceIMSI": null,
+    "DeviceId": "unknown",
+    "DeviceModel": null,
+    "DevicePhoneNumber": null,
+    "DeviceSubType": null,
+    "DeviceType": "Android",
+    "E2ETraceLevel": null,
+    "ETag": "2021-09-28 13:07:46.904Z",
+    "Email": null,
+    "EnableAppSpecificClientUsageKeys": false,
+    "FeatureVectorPolicy": {
+      "results": []
+    },
+    "FeatureVectorPolicyAllEnabled": true,
+    "FormFactor": null,
+    "InAppMessaging": false,
+    "IsWiped": false,
+    "LastKnownLocation": null,
+    "LogEntryExpiry": 10,
+    "LogMaxFileNum": 0,
+    "LogMaxFileSize": 0,
+    "MaxConnectionWaitTimeForClientUsage": 0,
+    "MpnsChannelURI": null,
+    "MpnsPushEnable": false,
+    "NetworkPolicy": {
+      "Analytics": {
+        "MobileNetwork": false,
+        "Roaming": false,
+        "Wifi": false
+      },
+      "ClientResource": {
+        "MobileNetwork": false,
+        "Roaming": false,
+        "Wifi": false
+      },
+      "Logs": {
+        "MobileNetwork": false,
+        "Roaming": false,
+        "Wifi": false
+      },
+      "NetworkPolicyEnabled": false,
+      "OfflineOData": {
+        "MobileNetwork": false,
+        "Roaming": false,
+        "Wifi": false
+      }
+    },
+    "PasswordPolicyDefaultPasswordAllowed": false,
+    "PasswordPolicyDigitRequired": false,
+    "PasswordPolicyEnabled": true,
+    "PasswordPolicyExpiresInNDays": 0,
+    "PasswordPolicyFingerprintEnabled": true,
+    "PasswordPolicyLockTimeout": 0,
+    "PasswordPolicyLowerRequired": false,
+    "PasswordPolicyMinLength": 8,
+    "PasswordPolicyMinUniqueChars": 0,
+    "PasswordPolicyRetryLimit": 20,
+    "PasswordPolicySpecialRequired": false,
+    "PasswordPolicyUpperRequired": false,
+    "ProxyApplicationEndpoint": "",
+    "ProxyPushEndpoint": "https://agroinvest-dev002-dev-simple.cfapps.eu10.hana.ondemand.com/Notification",
+    "PublishedToMobilePlace": false,
+    "PushGroup": null,
+    "TimeZone": null,
+    "UploadLogs": false,
+    "UserLocale": null,
+    "UserName": "s.chebotarev",
+    "WipeDisconnectedPeriod": 0,
+    "WnsChannelURI": null,
+    "WnsPushEnable": true,
+    "__metadata": {
+      "id": "https://agroinvest-dev002-dev-simple.cfapps.eu10.hana.ondemand.com/odata/applications/v4/simple/Connections('7e607988-1b29-4b2f-b357-dd2758bbec75')",
+      "uri": "https://agroinvest-dev002-dev-simple.cfapps.eu10.hana.ondemand.com/odata/applications/v4/simple/Connections('7e607988-1b29-4b2f-b357-dd2758bbec75')"
+    }
+  }
+}

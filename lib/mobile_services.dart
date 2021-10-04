@@ -1,7 +1,11 @@
 library mobile_services;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
+
+part 'src/client.dart';
+part 'src/logger.dart';
+part 'src/odata.dart';
+part 'src/registration.dart';
+part 'src/bundle.dart';
