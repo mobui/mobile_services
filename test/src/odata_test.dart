@@ -1,4 +1,6 @@
 
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_services/mobile_services.dart';
 
@@ -28,6 +30,17 @@ main(){
       expect(value1.json, true);
       expect(value1.query, 'true');
       expect(value1.toString(), 'true');
+    });
+  });
+
+  group('Create entity text', (){
+    test('',(){
+      try{
+        json.decode('qqweqw');
+      } on FormatException catch(err){
+        print(err.source);
+      }
+
     });
   });
 

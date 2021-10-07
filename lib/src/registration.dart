@@ -30,11 +30,11 @@ class Registration {
         .deleteEntity(entityName: "Connections", key: {"ApplicationConnectionId": EdmType.string(connectionId)});
   }
 
-  Future<void> updateConnection(Connection connection) async {
-    final newConnection =
-        await _client.odata.updateEntity(entityName: "Connections", newEntity: connection) as Connection;
-    return newConnection;
-  }
+  // Future<void> updateConnection(Connection connection) async {
+  //   final newConnection =
+  //       await _client.odata.updateEntity(entityName: "Connections", newEntity: connection) as Connection;
+  //   return newConnection;
+  // }
 
   Future<void> addCapability(String connectionId, Capability capability) async {
     // final newConnection = await  _client.odata.createEntity(

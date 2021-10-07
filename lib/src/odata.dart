@@ -13,39 +13,45 @@ class ODataClient {
   Future<ODataJson> getEntityById({
     required String entityName,
     required Map<String, EdmType> key,
-    List<String>? expand,
-    Map<String, String>? queries,
+    List<String> expand = const [],
+    Map<String, dynamic> queries = const {},
   }) async {
+    final path =
+        _buildPath([_client.endpoint, _buildEntityWithKey(entityName, key)]);
 
-    final path = _client.endpoint + "/" + _buildEntityWithKey(entityName, key);
+    final queryParameters = <String, dynamic>{}
+      ..addAll(_buildExpand(expand))
+      ..addAll(queries);
 
     final options = Options(
       contentType: ContentType.json.toString(),
       responseType: ResponseType.json,
       headers: _client._auth.headers,
-
     );
 
     try {
       final response = await _client._httpClient.get(
         path,
+        queryParameters: queryParameters,
         options: options,
       );
-      _jsonData = json.decode(response.toString());
+      return _parseBodyOne(response.toString());
     } on DioError catch (err) {
-      _errorHandlingDio(err);
+      throw _buildHttpErrorDio(err);
+    } on FormatException catch (err) {
+      throw _buildBodyError(err);
     }
   }
 
-  Future<ODataJsonList> getEntityByQuery({
-    required String entityName,
-    ODataFilter? filter,
-    List<String>? expand,
-    int? top,
-    int? skip,
-  }) {
-
-  }
+  // Future<ODataJsonList> getEntityByQuery({
+  //   required String entityName,
+  //   ODataFilter? filter,
+  //   List<String>? expand,
+  //   int? top,
+  //   int? skip,
+  // }) {
+  //
+  // }
 
   getDeepEntities({
     required String entityName,
@@ -59,9 +65,8 @@ class ODataClient {
     required String entityName,
     required ODataEntity newEntity,
   }) async {
-
     ODataJson? _jsonData;
-    final path = _client.endpoint + "/" + entityName;
+    final path = _buildPath([_client.endpoint, entityName]);
     final data = json.encode(newEntity.toJson());
     final options = Options(
       contentType: ContentType.json.toString(),
@@ -77,7 +82,7 @@ class ODataClient {
       );
       _jsonData = json.decode(response.toString());
     } on DioError catch (err) {
-      _errorHandlingDio(err);
+      throw _buildHttpErrorDio(err);
     }
     return _jsonData?['d'];
   }
@@ -92,16 +97,29 @@ class ODataClient {
     required Map<String, EdmType> key,
   }) async {}
 
-  void _errorHandlingDio(DioError err) {
+  ODataError _buildBodyError(FormatException err){
+    return ODataError.body(body: err.source.toString());
+  }
+
+  ODataError _buildHttpErrorDio(DioError err) {
     final statusCode = err.response?.statusCode ?? 0;
     switch (statusCode) {
-      case 401:
-        throw ODataError(message: 'Unauthorized', statusCode: statusCode);
       case 400:
         final odataError = json.decode(err.response?.data?.toString() ?? '');
-        throw ODataError(message: odataError?['message'] ?? 'Unknown error', statusCode: statusCode);
+        return ODataError.http(
+            message: odataError?['message'] ?? 'Unknown error',
+            statusCode: statusCode);
+      case 401:
+        return ODataError.http(message: 'Unauthorized', statusCode: statusCode);
+      case 404:
+        return ODataError.http(message: 'Unauthorized', statusCode: statusCode);
+      case 500:
+        final odataError = json.decode(err.response?.data?.toString() ?? '');
+        return ODataHttpError(
+            message: odataError?['message'] ?? 'Unknown error',
+            statusCode: statusCode);
       default:
-        throw ODataError(message: err.message, statusCode: statusCode);
+        return ODataError.http(message: err.message, statusCode: statusCode);
     }
   }
 
@@ -110,12 +128,35 @@ class ODataClient {
       final keyValue = key.values.toList().first.query;
       return '$entityName(\'$keyValue\')';
     } else if (key.length > 1) {
-      final keysValue = key.entries.fold('', (prev, el) => '$prev, ${el.key}=\'${el.value.query}\'');
+      final keysValue = key.entries
+          .fold('', (prev, el) => '$prev, ${el.key}=\'${el.value.query}\'');
       return '$entityName($keysValue)';
     } else {
-      throw ODataError(message: 'Empty key', statusCode: 0);
+      throw ODataError.key();
     }
+  }
 
+  Map<String, dynamic> _buildExpand(List<String> expand) {
+    final result = <String, dynamic>{};
+    if (expand.isNotEmpty) result['\$expand'] = expand.join(',');
+    return result;
+  }
+
+  String _buildPath(List<String> pathChunk) {
+    return pathChunk.join('/');
+  }
+
+  ODataJson _parseBodyOne(String body) {
+    try {
+      final _jsonData = json.decode(body);
+      if (_jsonData is Map && _jsonData.containsKey('d')) {
+        return _jsonData['d']!;
+      } else {
+        throw FormatException('The response body is not Odata entity', body);
+      }
+    } on FormatException catch (err) {
+      rethrow;
+    }
   }
 }
 
@@ -206,11 +247,24 @@ class EdmDateTime extends EdmType<DateTime> {
   String get query => value!.toIso8601String();
 }
 
-class ODataError implements Exception {
+abstract class ODataError implements Exception {
+  const factory ODataError.http({
+    required String message,
+    required int statusCode,
+  }) = ODataHttpError;
+
+  const factory ODataError.body({required String? body}) = ODataBodyError;
+
+  const factory ODataError.key() = ODataKeyError;
+
+  const ODataError();
+}
+
+class ODataHttpError extends ODataError {
   final int statusCode;
   final String message;
 
-  ODataError({
+  const ODataHttpError({
     required this.message,
     required this.statusCode,
   });
@@ -221,11 +275,32 @@ class ODataError implements Exception {
   }
 }
 
+class ODataBodyError extends ODataError {
+  final String? body;
+
+  const ODataBodyError({
+    required this.body,
+  }) : super();
+
+  @override
+  String toString() {
+    return 'Body parse error: $body';
+  }
+}
+
+class ODataKeyError extends ODataError {
+  const ODataKeyError() : super();
+
+  @override
+  String toString() {
+    return 'Keys is empty';
+  }
+}
+
 abstract class ODataEntity {
   ODataEntity();
 
   Map<String, dynamic> toJson();
-
 }
 
 class ODataFilter {
