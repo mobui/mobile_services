@@ -81,6 +81,15 @@ abstract class MobileServicesAuth {
   }) {
     return _BasicAuthSMP(username, password, appcid);
   }
+
+  factory MobileServicesAuth.fromJson(Map<String, dynamic> json) {
+    final String username =json["username"] ?? '';
+    final String password =json["password"] ?? '';
+    final String appcid =json["appcid"] ?? '';
+    if(username.isEmpty || password.isEmpty) return  MobileServicesAuth.no();
+    if (appcid.isEmpty) return MobileServicesAuth.basic(username: username, password: password);
+    return MobileServicesAuth.basicSMP(username: username, password: password, appcid: appcid);
+  }
 }
 
 class _NoAuth extends MobileServicesAuth {
