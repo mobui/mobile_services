@@ -60,6 +60,8 @@ class MobileServicesInterceptors extends Interceptor {
 abstract class MobileServicesAuth {
   Map<String, String> get headers;
 
+  Map<String, dynamic> get json;
+
   MobileServicesAuth();
 
   factory MobileServicesAuth.no() {
@@ -106,6 +108,9 @@ abstract class MobileServicesAuth {
 class _NoAuth extends MobileServicesAuth {
   @override
   Map<String, String> get headers => {};
+
+  @override
+  Map<String, dynamic> get json => {};
 }
 
 class _BasicAuth extends MobileServicesAuth {
@@ -121,6 +126,12 @@ class _BasicAuth extends MobileServicesAuth {
     var bytes = utf8.encode('$_username:$_password');
     return base64.encode(bytes);
   }
+
+  @override
+  Map<String, dynamic> get json => {
+        'username': _username,
+        'password': _password,
+      };
 }
 
 class _BasicAuthSMP extends _BasicAuth {
@@ -132,6 +143,9 @@ class _BasicAuthSMP extends _BasicAuth {
   @override
   Map<String, String> get headers =>
       super.headers..addAll({'X-SMP-APPCID': _appcid});
+
+  @override
+  Map<String, dynamic> get json => super.json..addAll({'appcid': _appcid});
 }
 
 class MobileServicesProps {
@@ -143,10 +157,10 @@ class MobileServicesProps {
     required this.appid,
   });
 
-  factory MobileServicesProps.fromJson(Map<String, dynamic> json){
-      final endpoint = json['endpoint'] ?? '';
-      final appid = json['appid'] ?? '';
-      return MobileServicesProps(endpoint: endpoint, appid: appid);
+  factory MobileServicesProps.fromJson(Map<String, dynamic> json) {
+    final endpoint = json['endpoint'] ?? '';
+    final appid = json['appid'] ?? '';
+    return MobileServicesProps(endpoint: endpoint, appid: appid);
   }
 
   String get registrationPath => '$endpoint/odata/applications/v4/$appid';
