@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "0",
+    "message": "DataQueryException: Unsupported request path: Capabilities(ApplicationConnectionId='60ad2510-1d4d-4bb8-8188-96f0dcbf6d24',Category='push',CapabilityName='Simple'"
+  }
+}

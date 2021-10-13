@@ -1,149 +1,166 @@
 part of '../mobile_services.dart';
 
-typedef ODataJson = Map<String,dynamic>;
-typedef ODataJsonList = List<Map<String,dynamic>>;
+typedef ODataJson = Map<String, dynamic>;
+typedef ODataJsonList = List<Map<String, dynamic>>;
 
-class ODataClient {
+enum Method {
+  UNDEFINED,
+  GET,
+  POST,
+  PUT,
+  DELETE,
+}
+
+extension MethodX on Method {
+  String toText() {
+    return this.toString().split('.')[1];
+  }
+}
+
+class _ODataAction {
+  final _ODataAction? prev;
+
+  _ODataAction(this.prev);
+}
+
+mixin _ODataTopSkipFilter on _ODataAction {
+  _ODataActionEntityOption top(int top) {
+    return _ODataActionEntityOption(
+        {'\$top': EdmType.integer(top).query}, this);
+  }
+
+  _ODataActionEntityOption skip(int skip) {
+    return _ODataActionEntityOption(
+        {'\$skip': EdmType.integer(skip).query}, this);
+  }
+
+  _ODataActionEntityOption filter(ODataFilter filter) {
+    return _ODataActionEntityOption({'\$filter': filter.toString()}, this);
+  }
+}
+
+mixin _ODataExpand on _ODataAction {
+  _ODataActionEntityOption expand(List<String> expand) {
+    return _ODataActionEntityOption({'\$expand': expand.join(',')}, this);
+  }
+}
+
+class _ODataActionMethod extends _ODataAction {
+  final Method _method;
   final MobileServicesClient _client;
+  final ODataJson? _data;
+  final MobileServicesClientType type;
 
-  ODataClient({
-    required MobileServicesClient client,
-  }) : _client = client;
+  _ODataActionMethod(this._method, this._data, this._client, this.type)
+      : super(null);
 
-  Future<ODataJson> getEntityById({
-    required String entityName,
-    required Map<String, EdmType> key,
-    List<String> expand = const [],
-    Map<String, dynamic> queries = const {},
-  }) async {
-    final path =
-        _buildPath([_client.endpoint, _buildEntityWithKey(entityName, key)]);
+  _ODataActionEntitySet entitySet(String entitySet) {
+    return _ODataActionEntitySet(entitySet, this);
+  }
+}
 
-    final queryParameters = <String, dynamic>{}
-      ..addAll(_buildExpand(expand))
-      ..addAll(queries);
+class _ODataActionEntitySet extends _ODataActionExecutable
+    with _ODataTopSkipFilter {
+  final String _entitySet;
 
-    final options = Options(
-      contentType: ContentType.json.toString(),
-      responseType: ResponseType.json,
-      headers: _client._auth.headers,
-    );
+  _ODataActionEntitySet(this._entitySet, _ODataAction prev) : super(prev);
 
-    try {
-      final response = await _client._httpClient.get(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return _parseBodyOne(response.toString());
-    } on DioError catch (err) {
-      throw _buildHttpErrorDio(err);
-    } on FormatException catch (err) {
-      throw _buildBodyError(err);
+  _ODataActionEntityKey key(Map<String, EdmType> key) {
+    return _ODataActionEntityKey(key, this);
+  }
+}
+
+class _ODataActionNavigationProperty extends _ODataActionExecutable
+    with _ODataExpand {
+  final String _navigationProperty;
+
+  _ODataActionNavigationProperty(this._navigationProperty, _ODataAction prev)
+      : super(prev);
+}
+
+class _ODataActionEntityKey extends _ODataActionExecutable with _ODataExpand {
+  final Map<String, EdmType> _key;
+
+  _ODataActionEntityKey(this._key, _ODataAction prev) : super(prev);
+
+  _ODataActionNavigationProperty navigationProperty(String navigationProperty) {
+    return _ODataActionNavigationProperty(navigationProperty, this);
+  }
+}
+
+class _ODataActionEntityOption extends _ODataActionExecutable {
+  final Map<String, String> _option;
+
+  _ODataActionEntityOption(this._option, _ODataAction prev) : super(prev);
+}
+
+class ODataRequest {
+  MobileServicesClient? client;
+  Map<String, dynamic> queryParameters = {};
+  String path = '';
+  String method = '';
+  ODataJson? data;
+  MobileServicesClientType type = MobileServicesClientType.ODATA;
+}
+
+class _ODataActionExecutable extends _ODataAction {
+  _ODataActionExecutable(_ODataAction prev) : super(prev);
+
+  Future<ODataResult> execute() async {
+    final request = _buildRequest();
+    final httpClient = request.client?._httpClient;
+    final response = await httpClient?.request(request.path,
+        data: request.data,
+        options: Options(
+          extra: {MobileServicesClient.TYPE_KEY: request.type},
+          method: request.method,
+          contentType: ContentType.json.toString(),
+        ),
+        queryParameters: request.queryParameters);
+    return ODataResult.none();
+  }
+
+  ODataRequest _buildRequest() {
+    final result = ODataRequest();
+
+    _ODataAction? current = prev;
+    while (true) {
+      if (current is _ODataActionEntitySet) {
+        result.path = '/' + current._entitySet + result.path;
+      }
+
+      if (current is _ODataActionEntityOption) {
+        result.queryParameters.addAll(current._option);
+      }
+      if (current is _ODataActionNavigationProperty) {
+        result.path = '/' + current._navigationProperty + result.path;
+      }
+
+      if (current is _ODataActionEntityKey) {
+        final key = current._key;
+        if (key.length == 1) {
+          final keyValue = key.values.toList().first.query;
+          result.path = '(\'$keyValue\')' + result.path;
+        } else if (key.length > 1) {
+          final keysValue = key.entries
+              .fold('', (prev, el) => '$prev, ${el.key}=\'${el.value.query}\'');
+          result.path = '(\'$keysValue\')' + result.path;
+        }
+      }
+
+      if (current is _ODataActionMethod) {
+        result.client = current._client;
+        result.data = current._data;
+        result.method = current._method.toText();
+      }
+
+      if (current != null) {
+        current = current.prev;
+      } else {
+        break;
+      }
     }
-  }
-
-  // Future<ODataJsonList> getEntityByQuery({
-  //   required String entityName,
-  //   ODataFilter? filter,
-  //   List<String>? expand,
-  //   int? top,
-  //   int? skip,
-  // }) {
-  //
-  // }
-
-  getDeepEntities({
-    required String entityName,
-    ODataFilter? filter,
-    List<String>? expand,
-    int? top,
-    int? skip,
-  }) {}
-
-  Future<ODataJson> createEntity({
-    required String entityName,
-    required ODataEntity newEntity,
-  }) async {
-    ODataJson? _jsonData;
-    final path = _buildPath([_client.endpoint, entityName]);
-    final data = json.encode(newEntity.toJson());
-    final options = Options(
-      contentType: ContentType.json.toString(),
-      responseType: ResponseType.json,
-      headers: _client._auth.headers,
-    );
-
-    try {
-      final response = await _client._httpClient.post(
-        path,
-        data: data,
-        options: options,
-      );
-      _jsonData = json.decode(response.toString());
-    } on DioError catch (err) {
-      throw _buildHttpErrorDio(err);
-    }
-    return _jsonData?['d'];
-  }
-
-  Future<void> updateEntity({
-    required String entityName,
-    required ODataEntity updatedEntity,
-  }) async {}
-
-  Future<void> deleteEntity({
-    required String entityName,
-    required Map<String, EdmType> key,
-  }) async {}
-
-  ODataError _buildBodyError(FormatException err){
-    return ODataError.body(body: err.source.toString());
-  }
-
-  ODataError _buildHttpErrorDio(DioError err) {
-    final statusCode = err.response?.statusCode ?? 0;
-    switch (statusCode) {
-      case 400:
-        final odataError = json.decode(err.response?.data?.toString() ?? '');
-        return ODataError.http(
-            message: odataError?['message'] ?? 'Unknown error',
-            statusCode: statusCode);
-      case 401:
-        return ODataError.http(message: 'Unauthorized', statusCode: statusCode);
-      case 404:
-        return ODataError.http(message: 'Unauthorized', statusCode: statusCode);
-      case 500:
-        final odataError = json.decode(err.response?.data?.toString() ?? '');
-        return ODataHttpError(
-            message: odataError?['message'] ?? 'Unknown error',
-            statusCode: statusCode);
-      default:
-        return ODataError.http(message: err.message, statusCode: statusCode);
-    }
-  }
-
-  String _buildEntityWithKey(String entityName, Map<String, EdmType> key) {
-    if (key.length == 1) {
-      final keyValue = key.values.toList().first.query;
-      return '$entityName(\'$keyValue\')';
-    } else if (key.length > 1) {
-      final keysValue = key.entries
-          .fold('', (prev, el) => '$prev, ${el.key}=\'${el.value.query}\'');
-      return '$entityName($keysValue)';
-    } else {
-      throw ODataError.key();
-    }
-  }
-
-  Map<String, dynamic> _buildExpand(List<String> expand) {
-    final result = <String, dynamic>{};
-    if (expand.isNotEmpty) result['\$expand'] = expand.join(',');
     return result;
-  }
-
-  String _buildPath(List<String> pathChunk) {
-    return pathChunk.join('/');
   }
 
   ODataJson _parseBodyOne(String body) {
@@ -158,6 +175,59 @@ class ODataClient {
       rethrow;
     }
   }
+}
+
+class ODataClient {
+  final MobileServicesClient _client;
+  Method _method = Method.UNDEFINED;
+
+  ODataClient({
+    required MobileServicesClient client,
+  }) : _client = client;
+
+  _ODataActionMethod get(
+      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+    return _ODataActionMethod(Method.GET, null, _client, type);
+  }
+
+  _ODataActionMethod update(ODataJson data,
+      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+    return _ODataActionMethod(Method.POST, data, _client, type);
+  }
+
+  _ODataActionMethod create(ODataJson data,
+      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+    return _ODataActionMethod(Method.POST, data, _client, type);
+  }
+
+  _ODataActionMethod delete(
+      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+    return _ODataActionMethod(Method.DELETE, null, _client, type);
+  }
+}
+
+abstract class ODataResult<T> {
+  final T value;
+
+  ODataResult(this.value);
+
+  static ODataSingleResult single(ODataJson value) => ODataSingleResult(value);
+
+  static ODataManyResult many(ODataJsonList value) => ODataManyResult(value);
+
+  static ODataNoneResult none() => ODataNoneResult();
+}
+
+class ODataSingleResult extends ODataResult<ODataJson> {
+  ODataSingleResult(ODataJson value) : super(value);
+}
+
+class ODataManyResult extends ODataResult<ODataJsonList> {
+  ODataManyResult(ODataJsonList value) : super(value);
+}
+
+class ODataNoneResult extends ODataResult<Null> {
+  ODataNoneResult() : super(null);
 }
 
 abstract class EdmType<T> {
@@ -175,6 +245,13 @@ abstract class EdmType<T> {
   factory EdmType.string(String? value) {
     if (value != null)
       return EdmString(value) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
+  factory EdmType.integer(int? value) {
+    if (value != null)
+      return EdmInteger(value) as EdmType<T>;
     else
       return EdmNull() as EdmType<T>;
   }
@@ -235,6 +312,10 @@ class EdmString extends EdmType<String> {
 
 class EdmBoolean extends EdmType<bool> {
   EdmBoolean(bool value) : super._(value);
+}
+
+class EdmInteger extends EdmType<int> {
+  EdmInteger(int value) : super._(value);
 }
 
 class EdmDateTime extends EdmType<DateTime> {

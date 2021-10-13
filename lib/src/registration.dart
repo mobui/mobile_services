@@ -1,16 +1,35 @@
 part of '../mobile_services.dart';
 
 class Registration {
-  final MobileServicesClient _client;
+  final ODataClient _client;
 
   Registration({
-    required MobileServicesClient client,
+    required ODataClient client,
   }) : _client = client;
 
   Future<Connection> createConnection(Connection connection) async {
-    final newConnection =
-        await _client.odata.createEntity(entityName: "Connections", newEntity: connection) as Connection;
-    return newConnection;
+    final mainEntity = 'Connections';
+    await _client
+        .create(connection.toJson(),
+            type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .execute();
+    return connection;
+  }
+
+  Future<Connection> updateConnection(Connection connection) async {
+    final mainEntity = 'Connections';
+    final key = {
+      'ApplicationConnectionId':
+          EdmType.string(connection.applicationConnectionId.json)
+    };
+    await _client
+        .update(connection.toJson(),
+            type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .key(key)
+        .execute();
+    return connection;
   }
 
   Future<Connection> getConnection(
@@ -18,40 +37,75 @@ class Registration {
     String? eTag,
     bool withCapabilities = false,
   }) async {
-    final odataJson = await _client.odata.getEntityById(
-        entityName: "Connections",
-        key: {"ApplicationConnectionId": EdmType.string(connectionId)},
-        expand: [if (withCapabilities) 'Capability']);
-    return Connection.fromJson(odataJson);
+    final mainEntity = 'Connections';
+    final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
+    final expand = [if (withCapabilities) 'Capability'];
+
+    final odataJson = await _client
+        .get(type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .key(key)
+        .expand(expand)
+        .execute();
+    return Connection.fromJson(odataJson.value);
   }
 
   Future<void> deleteConnection(String connectionId) async {
-    await _client.odata
-        .deleteEntity(entityName: "Connections", key: {"ApplicationConnectionId": EdmType.string(connectionId)});
-  }
-
-  // Future<void> updateConnection(Connection connection) async {
-  //   final newConnection =
-  //       await _client.odata.updateEntity(entityName: "Connections", newEntity: connection) as Connection;
-  //   return newConnection;
-  // }
-
-  Future<void> addCapability(String connectionId, Capability capability) async {
-    // final newConnection = await  _client.odata.createEntity(
-    //     entityName: "Connections", newEntity: connection) as Connection;
-    // return  newConnection;
+    final mainEntity = 'Connections';
+    final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
+    await _client.delete().entitySet(mainEntity).key(key).execute();
   }
 
   Future<List<Capability>> getCapabilities(String connectionId) async {
-    // final newConnection = await  _client.odata.getEntityByQuery(
-    //     entityName: "Connections", newEntity: connection) as Connection;
-    // return  newConnection;
-    return <Capability>[];
+    final mainEntity = 'Connections';
+    final navigationEntity = 'Capability';
+    final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
+    final odataJson = await _client
+        .delete(type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .key(key)
+        .navigationProperty(navigationEntity)
+        .execute();
+    if (odataJson is ODataManyResult) {
+      return odataJson.value.map((json) => Capability.fromJson(json)).toList();
+    } else {
+      return [];
+    }
   }
 
-  Future<void> deleteCapability(String connectionId, String capabilityId) async {
-    await _client.odata
-        .deleteEntity(entityName: "Connections", key: {"ApplicationConnectionId": EdmType.string(connectionId)});
+  Future<Capability> getCapability(String connectionId,
+      String capabilityCategory, String capabilityName) async {
+    final mainEntity = 'Capabilities';
+    final key = {
+      'ApplicationConnectionId': EdmType.string(connectionId),
+      'Category': EdmType.string(capabilityCategory),
+      'CapabilityName': EdmType.string(capabilityName),
+    };
+    final odataJson = await _client
+        .delete(type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .key(key)
+        .execute();
+    if (odataJson is ODataSingleResult) {
+      return Capability.fromJson(odataJson.value);
+    } else {
+      throw ODataError.body(body: odataJson.value.toString());
+    }
+  }
+
+  Future<void> deleteCapability(String connectionId, String capabilityCategory,
+      String capabilityName) async {
+    final mainEntity = 'Capabilities';
+    final key = {
+      'ApplicationConnectionId': EdmType.string(connectionId),
+      'Category': EdmType.string(capabilityCategory),
+      'CapabilityName': EdmType.string(capabilityName),
+    };
+    await _client
+        .delete(type: MobileServicesClientType.REGISTRATION)
+        .entitySet(mainEntity)
+        .key(key)
+        .execute();
   }
 }
 
@@ -117,6 +171,60 @@ class Connection extends ODataEntity {
       'DeviceType': this.deviceType.json,
     }..removeWhere((key, value) => value == null);
   }
+}
+
+class Capability extends ODataEntity {
+  final EdmType applicationConnectionId;
+  final EdmType capabilityName;
+  final EdmType category;
+  final EdmType capabilityValue;
+
+  Capability._({
+    required this.applicationConnectionId,
+    required this.capabilityName,
+    required this.category,
+    required this.capabilityValue,
+  });
+
+  factory Capability.fromJson(Map<String, dynamic> json) {
+    return Capability._(
+      applicationConnectionId: json['ApplicationConnectionId'],
+      capabilityName: json['CapabilityName'],
+      category: json['Category'],
+      capabilityValue: json['CapabilityValue'],
+    );
+  }
+
+  factory Capability.create({
+    required String applicationConnectionId,
+    required String capabilityName,
+    required String category,
+    required String capabilityValue,
+  }) {
+    return Capability._(
+      applicationConnectionId: EdmType.string(applicationConnectionId),
+      capabilityName: EdmType.string(capabilityName),
+      category: EdmType.string(category),
+      capabilityValue: EdmType.string(capabilityValue),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'ApplicationConnectionId': applicationConnectionId.json,
+      'CapabilityName': capabilityName.json,
+      'Category': category.json,
+      'CapabilityValue': capabilityValue.json,
+    };
+  }
+}
+
+class RegistrationError implements Exception {
+  final String message;
+  final Exception prev;
+
+  RegistrationError(this.message, this.prev);
 }
 
 enum DeviceType {
@@ -206,5 +314,3 @@ extension DeviceTypeX on DeviceType {
     }
   }
 }
-
-class Capability {}

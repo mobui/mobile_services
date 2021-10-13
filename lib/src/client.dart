@@ -1,59 +1,60 @@
 part of '../mobile_services.dart';
 
+enum MobileServicesClientType {
+   UNDEFINED,
+   ODATA,
+   LOGGER,
+   REGISTRATION,
+   BUNDLE
+}
+
 class MobileServicesClient {
+  static const TYPE_KEY = 'type';
   late final MobileServicesProps _props;
   late final MobileServicesAuth _auth;
   late final Dio _httpClient;
-  Registration? _registration;
-  Logger? _logger;
-  ODataClient? _odata;
   bool _closed = false;
 
   MobileServicesClient({
     required MobileServicesProps props,
-    MobileServicesAuth? auth,
-    Dio? httpClient,
+    required MobileServicesAuth auth,
+    required Dio httpClient,
   }) {
     _props = props;
-    _auth = auth ?? MobileServicesAuth.no();
-    _httpClient = httpClient ?? Dio();
+    _auth = auth;
+    _httpClient = httpClient;
+    _httpClient.interceptors
+        .add(MobileServicesInterceptors(this._props, this._auth));
   }
 
-  String get endpoint => _props.endpoint.toString();
-
-  String get appid => _props.appid;
-
-  Registration get registration {
-    _checkClosed();
-    if (_registration == null) _registration = Registration(client: this);
-    return _registration!;
-  }
-
-  Logger get logger {
-    _checkClosed();
-    if (_logger == null) _logger = Logger(client: this);
-    return _logger!;
-  }
-
-  ODataClient get odata {
-    _checkClosed();
-    if (_odata == null) _odata = ODataClient(client: this);
-    return _odata!;
-  }
-
-  ODataClient get bundle {
-    _checkClosed();
-    if (_odata == null) _odata = ODataClient(client: this);
-    return _odata!;
-  }
+  ODataClient get odata => ODataClient(client: this);
+  Registration get registration => Registration(client: odata);
+  Logger get logger => Logger(client: this);
+  Bundle get bundle => Bundle(client: this);
 
   void close() {
     _closed = true;
     _httpClient.close();
   }
 
-  void _checkClosed(){
-    if(_closed) throw MobileServicesError('Connection already closed');
+  bool get isClosed => _closed;
+}
+
+class MobileServicesInterceptors extends Interceptor {
+  final MobileServicesProps _props;
+  final MobileServicesAuth _auth;
+
+  MobileServicesInterceptors(this._props, this._auth);
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final type = options.extra[MobileServicesClient.TYPE_KEY] ?? MobileServicesClientType.UNDEFINED;
+    if (type == MobileServicesClientType.UNDEFINED){
+      handler.reject(DioError(requestOptions: options, error: 'Unsupported request type'));
+    }
+    options.path = _props.paths[type]!;
+    options.headers.addAll(_auth.headers);
+    return handler.next(options);
   }
 }
 
@@ -119,6 +120,23 @@ class MobileServicesProps {
     required this.endpoint,
     required this.appid,
   });
+
+  String get registrationPath => '$endpoint/odata/applications/v4/$appid';
+
+  String get dataPath => '$endpoint/$appid';
+
+  String get logPath =>
+      '$endpoint/mobileservices/application/$appid/clientlogs/v1/runtime/log/application/$appid';
+
+  String get bundlePath =>
+      '$endpoint/mobileservices/application/$appid/bundles/v1/runtime/bundle/application/$appid/bundle/';
+
+  Map<MobileServicesClientType, String> get paths => {
+    MobileServicesClientType.ODATA: dataPath,
+    MobileServicesClientType.LOGGER: logPath,
+    MobileServicesClientType.REGISTRATION: registrationPath,
+    MobileServicesClientType.BUNDLE: bundlePath,
+  };
 }
 
 class MobileServicesError implements Exception {

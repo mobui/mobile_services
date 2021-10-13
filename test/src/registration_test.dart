@@ -34,10 +34,12 @@ void main() {
     late Registration registration;
     late Connection inboundConnection;
     late Connection outboundConnection;
+    late ODataClient odataClient;
 
     setUp(() {
       httpClient = MockDio();
       client = MobileServicesClient(props: props, auth: auth, httpClient: httpClient);
+      odataClient = ODataClient(client: client);
       inboundConnection = Connection.create(deviceType: DeviceType.Android);
       outboundConnection = Connection.create(deviceType: DeviceType.Android, applicationConnectionId: Utils.APPCID);
     });
@@ -63,7 +65,7 @@ void main() {
           ),
         ),
       );
-      final newConnection = await client.registration.createConnection(inboundConnection);
+      final newConnection = await Registration(client: odataClient).createConnection(inboundConnection);
 
       verify(httpClient.post(
         path,
@@ -90,7 +92,7 @@ void main() {
           ),
         ),
       );
-      final newConnection = await client.registration.getConnection(Utils.APPCID, );
+      final newConnection = await Registration(client: odataClient).getConnection(Utils.APPCID, );
     });
 
     test('Create connection failed', () async {
