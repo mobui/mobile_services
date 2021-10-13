@@ -65,14 +65,14 @@ abstract class MobileServicesAuth {
   MobileServicesAuth();
 
   factory MobileServicesAuth.no() {
-    return _NoAuth();
+    return NoAuth();
   }
 
   factory MobileServicesAuth.basic({
     required String username,
     required String password,
   }) {
-    return _BasicAuth(username, password);
+    return BasicAuth(username, password);
   }
 
   factory MobileServicesAuth.basicSMP({
@@ -80,7 +80,7 @@ abstract class MobileServicesAuth {
     required String password,
     required String appcid,
   }) {
-    return _BasicAuthSMP(username, password, appcid);
+    return BasicAuthSMP(username, password, appcid);
   }
 
   factory MobileServicesAuth.auto({
@@ -103,9 +103,11 @@ abstract class MobileServicesAuth {
       appcid: json["appcid"],
     );
   }
+
+  bool get isSMPAuth => this is BasicAuthSMP;
 }
 
-class _NoAuth extends MobileServicesAuth {
+class NoAuth extends MobileServicesAuth {
   @override
   Map<String, String> get headers => {};
 
@@ -113,11 +115,11 @@ class _NoAuth extends MobileServicesAuth {
   Map<String, dynamic> get json => {};
 }
 
-class _BasicAuth extends MobileServicesAuth {
+class BasicAuth extends MobileServicesAuth {
   final String _username;
   final String _password;
 
-  _BasicAuth(this._username, this._password);
+  BasicAuth(this._username, this._password);
 
   @override
   Map<String, String> get headers => {'Authorization': 'Basic $_toBase64'};
@@ -134,10 +136,10 @@ class _BasicAuth extends MobileServicesAuth {
       };
 }
 
-class _BasicAuthSMP extends _BasicAuth {
+class BasicAuthSMP extends BasicAuth {
   final String _appcid;
 
-  _BasicAuthSMP(this._appcid, String username, String password)
+  BasicAuthSMP(this._appcid, String username, String password)
       : super(username, password);
 
   @override
