@@ -21,7 +21,7 @@ class Registration {
     final mainEntity = 'Connections';
     final key = {
       'ApplicationConnectionId':
-          EdmType.string(connection.applicationConnectionId.json)
+      EdmType.string(connection.applicationConnectionId.json)
     };
     await _client
         .update(connection.toJson(),
@@ -170,6 +170,45 @@ class Connection extends ODataEntity {
       'DeviceModel': this.deviceModel.json,
       'DeviceType': this.deviceType.json,
     }..removeWhere((key, value) => value == null);
+  }
+
+  Connection copyWith({
+    String? applicationConnectionId,
+    DeviceType? deviceType,
+    String? deviceModel,
+    bool? apnsPushEnable,
+    String? apnsDeviceToken,
+    bool? androidGcmPushEnabled,
+    String? androidGcmRegistrationId,
+    String? eTag,
+    bool? passwordPolicyEnabled,
+  }) {
+    return Connection._(
+      deviceType: deviceType != null
+          ? EdmType.string(deviceType.toText())
+          : this.deviceType,
+      deviceModel:
+          deviceModel != null ? EdmType.string(deviceModel) : this.deviceModel,
+      apnsPushEnable: apnsPushEnable != null
+          ? EdmType.boolean(apnsPushEnable)
+          : this.apnsPushEnable,
+      apnsDeviceToken: apnsDeviceToken != null
+          ? EdmType.string(apnsDeviceToken)
+          : this.apnsDeviceToken,
+      androidGcmPushEnabled: androidGcmPushEnabled != null
+          ? EdmType.boolean(androidGcmPushEnabled)
+          : this.androidGcmPushEnabled,
+      androidGcmRegistrationId: androidGcmRegistrationId != null
+          ? EdmType.string(androidGcmRegistrationId)
+          : this.androidGcmRegistrationId,
+      eTag: eTag != null ? EdmType.string(eTag) : this.eTag,
+      applicationConnectionId: applicationConnectionId != null
+          ? EdmType.string(applicationConnectionId)
+          : this.applicationConnectionId,
+      passwordPolicyEnabled: passwordPolicyEnabled != null
+          ? EdmType.boolean(passwordPolicyEnabled)
+          : this.passwordPolicyEnabled,
+    );
   }
 }
 

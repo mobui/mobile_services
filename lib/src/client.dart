@@ -94,6 +94,9 @@ class _BasicAuth extends MobileServicesAuth {
 
   _BasicAuth(this._username, this._password);
 
+  String get username => _username;
+  String get password => _password;
+
   @override
   Map<String, String> get headers => {'Authorization': 'Basic $_toBase64'};
 
@@ -107,6 +110,8 @@ class _BasicAuthSMP extends _BasicAuth {
   final String _appcid;
 
   _BasicAuthSMP(this._appcid, String username, String password) : super(username, password);
+
+  String get appcid => _appcid;
 
   @override
   Map<String, String> get headers => super.headers..addAll({'X-SMP-APPCID': _appcid});
