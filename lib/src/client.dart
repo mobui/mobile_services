@@ -1,12 +1,6 @@
 part of '../mobile_services.dart';
 
-enum MobileServicesClientType {
-   UNDEFINED,
-   ODATA,
-   LOGGER,
-   REGISTRATION,
-   BUNDLE
-}
+enum MobileServicesClientType { UNDEFINED, ODATA, LOGGER, REGISTRATION, BUNDLE }
 
 class MobileServicesClient {
   static const TYPE_KEY = 'type';
@@ -28,8 +22,11 @@ class MobileServicesClient {
   }
 
   ODataClient get odata => ODataClient(client: this);
+
   Registration get registration => Registration(client: odata);
+
   Logger get logger => Logger(client: this);
+
   Bundle get bundle => Bundle(client: this);
 
   void close() {
@@ -48,9 +45,11 @@ class MobileServicesInterceptors extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final type = options.extra[MobileServicesClient.TYPE_KEY] ?? MobileServicesClientType.UNDEFINED;
-    if (type == MobileServicesClientType.UNDEFINED){
-      handler.reject(DioError(requestOptions: options, error: 'Unsupported request type'));
+    final type = options.extra[MobileServicesClient.TYPE_KEY] ??
+        MobileServicesClientType.UNDEFINED;
+    if (type == MobileServicesClientType.UNDEFINED) {
+      handler.reject(
+          DioError(requestOptions: options, error: 'Unsupported request type'));
     }
     options.path = _props.paths[type]!;
     options.headers.addAll(_auth.headers);
@@ -61,17 +60,19 @@ class MobileServicesInterceptors extends Interceptor {
 abstract class MobileServicesAuth {
   Map<String, String> get headers;
 
+  Map<String, dynamic> get json;
+
   MobileServicesAuth();
 
   factory MobileServicesAuth.no() {
-    return _NoAuth();
+    return NoAuth();
   }
 
   factory MobileServicesAuth.basic({
     required String username,
     required String password,
   }) {
-    return _BasicAuth(username, password);
+    return BasicAuth(username, password);
   }
 
   factory MobileServicesAuth.basicSMP({
@@ -79,20 +80,46 @@ abstract class MobileServicesAuth {
     required String password,
     required String appcid,
   }) {
-    return _BasicAuthSMP(username, password, appcid);
+    return BasicAuthSMP(username, password, appcid);
   }
+
+  factory MobileServicesAuth.auto({
+    required String? username,
+    required String? password,
+    required String? appcid,
+  }) {
+    if ((username?.isEmpty ?? true) || (password?.isEmpty ?? true))
+      return MobileServicesAuth.no();
+    if (appcid?.isEmpty ?? true)
+      return MobileServicesAuth.basic(username: username!, password: password!);
+    return MobileServicesAuth.basicSMP(
+        username: username!, password: password!, appcid: appcid!);
+  }
+
+  factory MobileServicesAuth.fromJson(Map<String, dynamic> json) {
+    return MobileServicesAuth.auto(
+      username: json["username"],
+      password: json["password"],
+      appcid: json["appcid"],
+    );
+  }
+
+  bool get isSMPAuth => this is BasicAuthSMP;
 }
 
-class _NoAuth extends MobileServicesAuth {
+class NoAuth extends MobileServicesAuth {
   @override
   Map<String, String> get headers => {};
+
+  @override
+  Map<String, dynamic> get json => {};
 }
 
-class _BasicAuth extends MobileServicesAuth {
+class BasicAuth extends MobileServicesAuth {
   final String _username;
   final String _password;
 
-  _BasicAuth(this._username, this._password);
+  BasicAuth(this._username, this._password);
 
   String get username => _username;
   String get password => _password;
@@ -104,17 +131,28 @@ class _BasicAuth extends MobileServicesAuth {
     var bytes = utf8.encode('$_username:$_password');
     return base64.encode(bytes);
   }
+
+  @override
+  Map<String, dynamic> get json => {
+        'username': _username,
+        'password': _password,
+      };
 }
 
-class _BasicAuthSMP extends _BasicAuth {
+class BasicAuthSMP extends BasicAuth {
   final String _appcid;
 
-  _BasicAuthSMP(this._appcid, String username, String password) : super(username, password);
+  BasicAuthSMP(this._appcid, String username, String password)
+      : super(username, password);
 
   String get appcid => _appcid;
 
   @override
-  Map<String, String> get headers => super.headers..addAll({'X-SMP-APPCID': _appcid});
+  Map<String, String> get headers =>
+      super.headers..addAll({'X-SMP-APPCID': _appcid});
+
+  @override
+  Map<String, dynamic> get json => super.json..addAll({'appcid': _appcid});
 }
 
 class MobileServicesProps {
@@ -125,6 +163,12 @@ class MobileServicesProps {
     required this.endpoint,
     required this.appid,
   });
+
+  factory MobileServicesProps.fromJson(Map<String, dynamic> json) {
+    final endpoint = json['endpoint'] ?? '';
+    final appid = json['appid'] ?? '';
+    return MobileServicesProps(endpoint: endpoint, appid: appid);
+  }
 
   String get registrationPath => '$endpoint/odata/applications/v4/$appid';
 
@@ -137,11 +181,11 @@ class MobileServicesProps {
       '$endpoint/mobileservices/application/$appid/bundles/v1/runtime/bundle/application/$appid/bundle/';
 
   Map<MobileServicesClientType, String> get paths => {
-    MobileServicesClientType.ODATA: dataPath,
-    MobileServicesClientType.LOGGER: logPath,
-    MobileServicesClientType.REGISTRATION: registrationPath,
-    MobileServicesClientType.BUNDLE: bundlePath,
-  };
+        MobileServicesClientType.ODATA: dataPath,
+        MobileServicesClientType.LOGGER: logPath,
+        MobileServicesClientType.REGISTRATION: registrationPath,
+        MobileServicesClientType.BUNDLE: bundlePath,
+      };
 }
 
 class MobileServicesError implements Exception {

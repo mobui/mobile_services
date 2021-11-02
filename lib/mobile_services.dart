@@ -1,7 +1,6 @@
 library mobile_services;
 
 import 'dart:convert';
-import 'dart:html';
 import 'dart:io';
 import 'package:dio/dio.dart';
 
