@@ -117,7 +117,7 @@ class _ODataActionExecutable extends _ODataAction {
           contentType: ContentType.json.toString(),
         ),
         queryParameters: request.queryParameters);
-    return _parseBodyOne(response!.data.toString());
+    return _parseBody(response!.data);
   }
 
   ODataRequest _buildRequest() {
@@ -164,11 +164,16 @@ class _ODataActionExecutable extends _ODataAction {
     return result;
   }
 
-  ODataResult _parseBodyOne(String body) {
+  ODataResult _parseBody(dynamic body) {
     try {
-      final _jsonData = json.decode(body);
+      final _jsonData = body as Map<String, dynamic>;
       if (_jsonData is Map && _jsonData.containsKey('d')) {
-        return ODataResult.single(_jsonData['d']!);
+        final d = _jsonData['d']! as Map<String, dynamic>;
+        if (d is Map && d.containsKey('result') && d['result']! is List) {
+          return ODataResult.single(d);
+        } else {
+          return ODataResult.many(d['result']!);
+        }
       } else {
         throw FormatException('The response body is not Odata entity', body);
       }
