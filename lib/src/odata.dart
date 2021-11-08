@@ -149,6 +149,7 @@ class _ODataActionExecutable extends _ODataAction {
       }
 
       if (current is _ODataActionMethod) {
+        result.type = current.type;
         result.client = current._client;
         result.data = current._data;
         result.method = current._method.toText();
