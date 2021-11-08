@@ -134,15 +134,15 @@ class Connection extends ODataEntity {
 
   factory Connection.fromJson(Map<String, dynamic> json) {
     return Connection.create(
-      applicationConnectionId: json['ApplicationConnectionId'] ?? '',
+        applicationConnectionId: json['ApplicationConnectionId'] ?? '',
         deviceModel: json['DeviceModel'] ?? '',
         deviceType: DeviceTypeX.fromText(json['DeviceType'] ?? 'Undefined'),
         eTag: json['ETag'] ?? '',
-        apnsPushEnable: json['ETag'] ?? false,
-        androidGcmPushEnabled: json['AndroidGcmPushEnabled'] ?? false,
         passwordPolicyEnabled: json['PasswordPolicyEnabled'] ?? false,
+        androidGcmPushEnabled: json['AndroidGcmPushEnabled'] ?? false,
         androidGcmRegistrationId: json['AndroidGcmRegistrationId'] ?? '',
-        apnsDeviceToken: json['ApnsPushEnable'] ?? '');
+        apnsPushEnable: json['ApnsPushEnable'] ?? false,
+        apnsDeviceToken: json['ApnsDeviceToken'] ?? '');
   }
 
   factory Connection.create({
