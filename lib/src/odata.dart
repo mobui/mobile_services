@@ -123,7 +123,7 @@ class _ODataActionExecutable extends _ODataAction {
   ODataRequest _buildRequest() {
     final result = ODataRequest();
 
-    _ODataAction? current = prev;
+    _ODataAction? current = this;
     while (true) {
       if (current is _ODataActionEntitySet) {
         result.path = '/' + current._entitySet + result.path;
