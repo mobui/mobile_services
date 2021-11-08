@@ -51,7 +51,7 @@ class MobileServicesInterceptors extends Interceptor {
       handler.reject(
           DioError(requestOptions: options, error: 'Unsupported request type'));
     }
-    options.path = _props.paths[type]!;
+    options.path = _props.paths[type]! + options.path;
     options.headers.addAll(_auth.headers);
     return handler.next(options);
   }
