@@ -117,7 +117,7 @@ class _ODataActionExecutable extends _ODataAction {
           contentType: ContentType.json.toString(),
         ),
         queryParameters: request.queryParameters);
-    return ODataResult.none();
+    return _parseBodyOne(response!.data.toString());
   }
 
   ODataRequest _buildRequest() {
@@ -164,11 +164,11 @@ class _ODataActionExecutable extends _ODataAction {
     return result;
   }
 
-  ODataJson _parseBodyOne(String body) {
+  ODataResult _parseBodyOne(String body) {
     try {
       final _jsonData = json.decode(body);
       if (_jsonData is Map && _jsonData.containsKey('d')) {
-        return _jsonData['d']!;
+        return ODataResult.single(_jsonData['d']!);
       } else {
         throw FormatException('The response body is not Odata entity', body);
       }
@@ -268,7 +268,8 @@ abstract class EdmType<T> {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || (other is EdmType<T> && value == other.value);
+    return identical(this, other) ||
+        (other is EdmType<T> && value == other.value);
   }
 
   @override
@@ -407,7 +408,8 @@ abstract class _ODataFilterPart {
 class _ODataFilterPartBinary extends _ODataFilterPart {
   final String _part;
 
-  _ODataFilterPartBinary(String property, String operation, String value) : this._part = '$property $operation $value';
+  _ODataFilterPartBinary(String property, String operation, String value)
+      : this._part = '$property $operation $value';
 
   @override
   String toString() {

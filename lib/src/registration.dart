@@ -9,12 +9,12 @@ class Registration {
 
   Future<Connection> createConnection(Connection connection) async {
     final mainEntity = 'Connections';
-    await _client
+    final odataJson = await _client
         .create(connection.toJson(),
             type: MobileServicesClientType.REGISTRATION)
         .entitySet(mainEntity)
         .execute();
-    return connection;
+    return Connection.fromJson(odataJson.value);
   }
 
   Future<Connection> updateConnection(Connection connection) async {
