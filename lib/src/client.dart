@@ -18,7 +18,8 @@ class MobileServicesClient {
     _auth = auth;
     _httpClient = httpClient;
     _httpClient.interceptors
-        .add(MobileServicesInterceptors(this._props, this._auth));
+      ..removeWhere((element) => element is MobileServicesInterceptors)
+      ..add(MobileServicesInterceptors(this._props, this._auth));
   }
 
   ODataClient get odata => ODataClient(client: this);
