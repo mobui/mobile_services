@@ -115,6 +115,7 @@ class _ODataActionExecutable extends _ODataAction {
           extra: {MobileServicesClient.TYPE_KEY: request.type},
           method: request.method,
           contentType: ContentType.json.toString(),
+          responseType: ResponseType.json
         ),
         queryParameters: request.queryParameters);
     return _parseBody(response!.data);
