@@ -143,7 +143,7 @@ class BasicAuth extends MobileServicesAuth {
 class BasicAuthSMP extends BasicAuth {
   final String _appcid;
 
-  BasicAuthSMP(this._appcid, String username, String password)
+  BasicAuthSMP(String username, String password, this._appcid)
       : super(username, password);
 
   String get appcid => _appcid;
