@@ -170,8 +170,8 @@ class _ODataActionExecutable extends _ODataAction {
       final _jsonData = body as Map<String, dynamic>;
       if (_jsonData is Map && _jsonData.containsKey('d')) {
         final d = _jsonData['d']! as Map<String, dynamic>;
-        if (d is Map && d.containsKey('result') && d['result']! is List) {
-          return ODataResult.many(d['result']!);
+        if (d is Map && d.containsKey('results') && d['results']! is List) {
+          return ODataResult.many(d['results']!);
         } else {
           return ODataResult.single(d);
         }
