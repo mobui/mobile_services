@@ -1,22 +1,35 @@
-
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_services/mobile_services.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
-main(){
-  group('Edm type test', (){
+import '../fixture/utils.dart';
+import 'registration_test.mocks.dart';
+
+@GenerateMocks([Dio])
+main() {
+  final props = MobileServicesProps(
+      endpoint: Utils.ENDPOINT,
+      appid: Utils.APPID,
+      techUsername: '',
+      techPassword: '');
+  final auth = MobileServicesAuth.basic(username: 'hello', password: 'world');
+
+  group('Edm type test', () {
     test('Edm string test', () {
-       final value1 = EdmType.string('Hello');
-       final value2 = EdmType.string('Hello');
-       final value3 = EdmType.string('Hello1');
+      final value1 = EdmType.string('Hello');
+      final value2 = EdmType.string('Hello');
+      final value3 = EdmType.string('Hello1');
 
-       expect(value1, value2);
-       expect(value1, isNot(equals(value3)));
-       expect(value1.value, 'Hello');
-       expect(value1.json, 'Hello');
-       expect(value1.query, 'Hello');
-       expect(value1.toString(), 'Hello');
+      expect(value1, value2);
+      expect(value1, isNot(equals(value3)));
+      expect(value1.value, 'Hello');
+      expect(value1.json, 'Hello');
+      expect(value1.query, 'Hello');
+      expect(value1.toString(), 'Hello');
     });
 
     test('Edm boolean test', () {
@@ -33,17 +46,52 @@ main(){
     });
   });
 
-  group('Create entity text', (){
-    test('',(){
-      try{
+  group('Create entity text', () {
+    test('', () {
+      try {
         json.decode('qqweqw');
-      } on FormatException catch(err){
+      } on FormatException catch (err) {
         print(err.source);
       }
-
     });
   });
 
+  group('Create entity text', () {
+    late MobileServicesClient client;
+    late MockDio httpClient;
+
+    setUp(() {
+      httpClient = MockDio();
+      when(httpClient.interceptors).thenReturn(Interceptors());
+      when(
+        httpClient.get(
+          any,
+          options: anyNamed('options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: anyNamed('data'),
+          requestOptions: RequestOptions(
+            path: '',
+            data: '',
+          ),
+        ),
+      );
+      client = MobileServicesClient(
+          props: props, auth: auth, httpClient: httpClient);
+    });
+
+    test('', () {
+      try {
+        final result = client.odata
+            .get()
+            .entitySet('Hello')
+            .expand(['asasd', 'qweqweqw']).execute();
+      } on FormatException catch (err) {
+        print(err.source);
+      }
+    });
+  });
 }
 //
 // import 'package:flutter_test/flutter_test.dart';
