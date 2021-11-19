@@ -194,16 +194,25 @@ class MobileServicesProps {
   final String endpoint;
   final String appid;
   final bool withToken;
+  final String techUsername;
+  final String techPassword;
 
-  MobileServicesProps(
-      {required this.endpoint, required this.appid, this.withToken = false});
+  MobileServicesProps({
+    required this.endpoint,
+    required this.appid,
+    required this.techUsername,
+    required this.techPassword,
+    this.withToken = false,
+  });
 
   factory MobileServicesProps.fromJson(Map<String, dynamic> json) {
     final endpoint = json['endpoint'] ?? '';
     final appid = json['appid'] ?? '';
     final withToken = (json['withToken'] ?? false) as bool;
+    final techUsername = json['techUsername'] ?? '';
+    final techPassword = json['techPassword'] ?? '';
     return MobileServicesProps(
-        endpoint: endpoint, appid: appid, withToken: withToken);
+        endpoint: endpoint, appid: appid, withToken: withToken, techUsername: techUsername, techPassword: techPassword);
   }
 
   String get registrationPath => '$endpoint/odata/applications/v4/$appid';
