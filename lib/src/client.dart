@@ -84,17 +84,33 @@ abstract class MobileServicesAuth {
     return BasicAuthSMP(username, password, appcid);
   }
 
+  factory MobileServicesAuth.basicSMPWithToken({
+    required String username,
+    required String password,
+    required String appcid,
+    required String token,
+  }) {
+    return BasicAuthSMP(username, password, appcid);
+  }
+
   factory MobileServicesAuth.auto({
     required String? username,
     required String? password,
     required String? appcid,
+    required String? token,
   }) {
     if ((username?.isEmpty ?? true) || (password?.isEmpty ?? true))
       return MobileServicesAuth.no();
     if (appcid?.isEmpty ?? true)
       return MobileServicesAuth.basic(username: username!, password: password!);
-    return MobileServicesAuth.basicSMP(
-        username: username!, password: password!, appcid: appcid!);
+    if (token?.isEmpty ?? true)
+      return MobileServicesAuth.basicSMP(
+          username: username!, password: password!, appcid: appcid!);
+    return MobileServicesAuth.basicSMPWithToken(
+        username: username!,
+        password: password!,
+        appcid: appcid!,
+        token: token!);
   }
 
   factory MobileServicesAuth.fromJson(Map<String, dynamic> json) {
@@ -102,6 +118,7 @@ abstract class MobileServicesAuth {
       username: json["username"],
       password: json["password"],
       appcid: json["appcid"],
+      token: json["token"],
     );
   }
 
@@ -156,19 +173,37 @@ class BasicAuthSMP extends BasicAuth {
   Map<String, dynamic> get json => super.json..addAll({'appcid': _appcid});
 }
 
+class BasicAuthSMPWithToken extends BasicAuthSMP {
+  final String _token;
+
+  BasicAuthSMPWithToken(
+      String username, String password, String appcid, this._token)
+      : super(username, password, appcid);
+
+  String get token => _token;
+
+  @override
+  Map<String, String> get headers =>
+      super.headers..addAll({'X-USER-TOKEN': _token});
+
+  @override
+  Map<String, dynamic> get json => super.json..addAll({'token': _token});
+}
+
 class MobileServicesProps {
   final String endpoint;
   final String appid;
+  final bool withToken;
 
-  MobileServicesProps({
-    required this.endpoint,
-    required this.appid,
-  });
+  MobileServicesProps(
+      {required this.endpoint, required this.appid, this.withToken = false});
 
   factory MobileServicesProps.fromJson(Map<String, dynamic> json) {
     final endpoint = json['endpoint'] ?? '';
     final appid = json['appid'] ?? '';
-    return MobileServicesProps(endpoint: endpoint, appid: appid);
+    final withToken = (json['withToken'] ?? false) as bool;
+    return MobileServicesProps(
+        endpoint: endpoint, appid: appid, withToken: withToken);
   }
 
   String get registrationPath => '$endpoint/odata/applications/v4/$appid';
