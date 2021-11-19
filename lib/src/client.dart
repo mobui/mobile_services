@@ -90,7 +90,7 @@ abstract class MobileServicesAuth {
     required String appcid,
     required String token,
   }) {
-    return BasicAuthSMP(username, password, appcid);
+    return BasicAuthSMPWithToken(username, password, appcid, token);
   }
 
   factory MobileServicesAuth.auto({
