@@ -70,6 +70,19 @@ class _ODataActionEntitySet extends _ODataActionExecutable
   }
 }
 
+class _ODataActionFunctionImport extends _ODataActionExecutable
+    with _ODataTopSkipFilter {
+  final String _functionImport;
+
+  _ODataActionFunctionImport(this._functionImport, _ODataAction prev)
+      : super(prev);
+
+  _ODataActionEntityOption options(Map<String, EdmType> options) {
+    return _ODataActionEntityOption(
+        options.map((key, value) => MapEntry(key, value.toString())), this);
+  }
+}
+
 class _ODataActionNavigationProperty extends _ODataActionExecutable
     with _ODataExpand {
   final String _navigationProperty;
@@ -132,6 +145,9 @@ class _ODataActionExecutable extends _ODataAction {
 
       if (current is _ODataActionEntityOption) {
         result.queryParameters.addAll(current._option);
+      }
+      if (current is _ODataActionFunctionImport) {
+        result.path = '/' + current._functionImport + result.path;
       }
       if (current is _ODataActionNavigationProperty) {
         result.path = '/' + current._navigationProperty + result.path;

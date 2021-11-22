@@ -11,7 +11,7 @@ import 'registration_test.mocks.dart';
 
 @GenerateMocks([Dio])
 void main() {
-  final props = MobileServicesProps(endpoint: Utils.ENDPOINT, appid: Utils.APPID);
+  final props = MobileServicesProps(endpoint: Utils.ENDPOINT, appid: Utils.APPID, techPassword: '');
   final auth = MobileServicesAuth.basic(username: 'hello', password: 'world');
   final outboundConnectionJson = Utils.readFixtureFile('connection.json');
   final entitySetName = 'Connections';
