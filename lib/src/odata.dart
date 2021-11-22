@@ -23,17 +23,21 @@ class _ODataAction {
   _ODataAction(this.prev);
 }
 
-mixin _ODataTopSkipFilter on _ODataAction {
+mixin _ODataTop on _ODataAction {
   _ODataActionEntityOption top(int top) {
     return _ODataActionEntityOption(
         {'\$top': EdmType.integer(top).query}, this);
   }
+}
 
+mixin _ODataSkip on _ODataAction {
   _ODataActionEntityOption skip(int skip) {
     return _ODataActionEntityOption(
         {'\$skip': EdmType.integer(skip).query}, this);
   }
+}
 
+mixin _ODataFilter on _ODataAction {
   _ODataActionEntityOption filter(ODataFilter filter) {
     return _ODataActionEntityOption({'\$filter': filter.toString()}, this);
   }
@@ -60,7 +64,7 @@ class _ODataActionMethod extends _ODataAction {
 }
 
 class _ODataActionEntitySet extends _ODataActionExecutable
-    with _ODataTopSkipFilter {
+    with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
   final String _entitySet;
 
   _ODataActionEntitySet(this._entitySet, _ODataAction prev) : super(prev);
@@ -101,7 +105,8 @@ class _ODataActionEntityKey extends _ODataActionExecutable with _ODataExpand {
   }
 }
 
-class _ODataActionEntityOption extends _ODataActionExecutable {
+class _ODataActionEntityOption extends _ODataActionExecutable
+    with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
   final Map<String, String> _option;
 
   _ODataActionEntityOption(this._option, _ODataAction prev) : super(prev);
@@ -125,7 +130,7 @@ class _ODataActionExecutable extends _ODataAction {
     final response = await httpClient?.request(request.path,
         data: request.data,
         options: Options(
-          extra: {MobileServicesClient.TYPE_KEY: request.type},
+            extra: {MobileServicesClient.TYPE_KEY: request.type},
             method: request.method,
             contentType: ContentType.json.toString(),
             responseType: ResponseType.json,
@@ -187,7 +192,9 @@ class _ODataActionExecutable extends _ODataAction {
       if (_jsonData is Map && _jsonData.containsKey('d')) {
         final d = _jsonData['d']! as Map<String, dynamic>;
         if (d is Map && d.containsKey('results') && d['results']! is List) {
-          return ODataResult.many((d['results']! as List).map((e) => e as Map<String, dynamic>).toList());
+          return ODataResult.many((d['results']! as List)
+              .map((e) => e as Map<String, dynamic>)
+              .toList());
         } else {
           return ODataResult.single(d);
         }
