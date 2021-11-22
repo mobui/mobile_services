@@ -310,7 +310,7 @@ abstract class EdmType<T> {
       return EdmNull() as EdmType<T>;
   }
 
-  factory EdmType.dataTime(dynamic value) {
+  factory EdmType.dateTime(dynamic value) {
     if (value is String) {
       final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
       final String? dateMills = dateRegExp.firstMatch(value)?.group(1);

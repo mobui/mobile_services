@@ -101,8 +101,9 @@ main() {
 
     test('', () {
       try {
-        final x =  EdmType.dataTime('/Date(1615766400000)/');
-        print(x);
+        final x =  EdmType.dateTime('/Date(1615766400000)/');
+
+        print(x.value) ;
       } on FormatException catch (err) {
         print(err.source);
       }
@@ -112,7 +113,7 @@ main() {
       final filter1 = ODataFilter(
           path: "asdas",
           operator: ODataFilterOperator.EQ,
-          value1: EdmType.dataTime(DateTime.now()));
+          value1: EdmType.dateTime(DateTime.now()));
       final filter2 = ODataFilter(
           path: "asdas",
           operator: ODataFilterOperator.EQ,
