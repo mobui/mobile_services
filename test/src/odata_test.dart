@@ -9,7 +9,6 @@ import 'package:mockito/mockito.dart';
 import '../fixture/utils.dart';
 import 'registration_test.mocks.dart';
 
-@GenerateMocks([Dio])
 main() {
   final props = MobileServicesProps(
       endpoint: Utils.ENDPOINT,
@@ -87,6 +86,17 @@ main() {
             .get()
             .entitySet('Hello')
             .expand(['asasd', 'qweqweqw']).execute();
+      } on FormatException catch (err) {
+        print(err.source);
+      }
+    });
+
+    test('Import function', () {
+      try {
+        final result = client.odata
+            .get()
+            .functionImport("GetCurrentUser").options({"id": EdmType.string('Hello')})
+            .execute();
       } on FormatException catch (err) {
         print(err.source);
       }

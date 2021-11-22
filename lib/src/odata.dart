@@ -61,6 +61,10 @@ class _ODataActionMethod extends _ODataAction {
   _ODataActionEntitySet entitySet(String entitySet) {
     return _ODataActionEntitySet(entitySet, this);
   }
+
+  _ODataActionFunctionImport functionImport(String functionImport) {
+    return _ODataActionFunctionImport(functionImport, this);
+  }
 }
 
 class _ODataActionEntitySet extends _ODataActionExecutable
@@ -74,8 +78,7 @@ class _ODataActionEntitySet extends _ODataActionExecutable
   }
 }
 
-class _ODataActionFunctionImport extends _ODataActionExecutable
-    with _ODataTopSkipFilter {
+class _ODataActionFunctionImport extends _ODataActionExecutable {
   final String _functionImport;
 
   _ODataActionFunctionImport(this._functionImport, _ODataAction prev)
@@ -119,6 +122,7 @@ class ODataRequest {
   String method = '';
   ODataJson? data;
   MobileServicesClientType type = MobileServicesClientType.ODATA;
+  String functionImport = '';
 }
 
 class _ODataActionExecutable extends _ODataAction {
@@ -136,7 +140,7 @@ class _ODataActionExecutable extends _ODataAction {
             responseType: ResponseType.json,
             headers: {'Accept': 'application/json'}),
         queryParameters: request.queryParameters);
-    return _parseBody(response!.data);
+    return _parseBody(request, response!.data);
   }
 
   ODataRequest _buildRequest() {
@@ -153,6 +157,7 @@ class _ODataActionExecutable extends _ODataAction {
       }
       if (current is _ODataActionFunctionImport) {
         result.path = '/' + current._functionImport + result.path;
+        result.functionImport = current._functionImport;
       }
       if (current is _ODataActionNavigationProperty) {
         result.path = '/' + current._navigationProperty + result.path;
@@ -186,7 +191,7 @@ class _ODataActionExecutable extends _ODataAction {
     return result;
   }
 
-  ODataResult _parseBody(dynamic body) {
+  ODataResult _parseBody(ODataRequest request, dynamic body) {
     try {
       final _jsonData = body as Map<String, dynamic>;
       if (_jsonData is Map && _jsonData.containsKey('d')) {
@@ -195,6 +200,19 @@ class _ODataActionExecutable extends _ODataAction {
           return ODataResult.many((d['results']! as List)
               .map((e) => e as Map<String, dynamic>)
               .toList());
+        } else if (d is Map &&
+            request.functionImport.isNotEmpty &&
+            d.containsKey(request.functionImport)) {
+          final result = d[request.functionImport];
+          if (result is List) {
+            return ODataResult.many(
+                (result).map((e) => e as Map<String, dynamic>).toList());
+          } else if (result is Map) {
+            return ODataResult.single(result as Map<String, dynamic>);
+          } else {
+            throw FormatException(
+                'The response body is not Odata entity', body);
+          }
         } else {
           return ODataResult.single(d);
         }
