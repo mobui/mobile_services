@@ -310,10 +310,23 @@ abstract class EdmType<T> {
       return EdmNull() as EdmType<T>;
   }
 
-  factory EdmType.datatime(DateTime? value) {
-    if (value != null)
+  factory EdmType.dataTime(dynamic value) {
+    if (value is String) {
+      final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
+      final String? dateMills = dateRegExp.firstMatch(value)?.group(1);
+      if (dateMills == null) return EdmNull() as EdmType<T>;
+      final DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(
+              int.parse((dateMills)),
+              isUtc: true)
+          .toLocal();
+      return EdmDateTime(timestamp) as EdmType<T>;
+    } else if (value is DateTime)
       return EdmDateTime(value) as EdmType<T>;
-    else
+    else if (value) {
+      final DateTime timestamp =
+          DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
+      return EdmDateTime(timestamp) as EdmType<T>;
+    } else
       return EdmNull() as EdmType<T>;
   }
 
