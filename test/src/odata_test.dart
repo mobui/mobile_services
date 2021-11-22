@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_services/mobile_services.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import '../fixture/utils.dart';
@@ -93,10 +92,33 @@ main() {
 
     test('Import function', () {
       try {
-        final result = client.odata
-            .get()
-            .functionImport("GetCurrentUser").options({"id": EdmType.string('Hello')})
-            .execute();
+        final result =
+            client.odata.get().functionImport("GetCurrentUser").execute();
+      } on FormatException catch (err) {
+        print(err.source);
+      }
+    });
+
+    test('Filter', () {
+      final filter1 = ODataFilter(
+          path: "asdas",
+          operator: ODataFilterOperator.EQ,
+          value1: EdmType.datatime(DateTime.now()));
+      final filter2 = ODataFilter(
+          path: "asdas",
+          operator: ODataFilterOperator.EQ,
+          value1: EdmType.boolean(true));
+      final filter3 = ODataFilter(
+          path: 'www',
+          operator: ODataFilterOperator.BT,
+          value1: EdmType.string('1'),
+          value2: EdmType.string('3'),
+          filters: [filter1, filter2],
+          and: true);
+
+      try {
+        final result =
+            client.odata.get().entitySet('Users').filter(filter3).execute();
       } on FormatException catch (err) {
         print(err.source);
       }

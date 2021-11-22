@@ -263,6 +263,8 @@ abstract class ODataResult<T> {
 
   static ODataManyResult many(ODataJsonList value) => ODataManyResult(value);
 
+  static ODataValueResult val(String value) => ODataValueResult(value);
+
   static ODataNoneResult none() => ODataNoneResult();
 }
 
@@ -272,6 +274,10 @@ class ODataSingleResult extends ODataResult<ODataJson> {
 
 class ODataManyResult extends ODataResult<ODataJsonList> {
   ODataManyResult(ODataJsonList value) : super(value);
+}
+
+class ODataValueResult extends ODataResult<String> {
+  ODataValueResult(String value) : super(value);
 }
 
 class ODataNoneResult extends ODataResult<Null> {
@@ -300,6 +306,20 @@ abstract class EdmType<T> {
   factory EdmType.integer(int? value) {
     if (value != null)
       return EdmInteger(value) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
+  factory EdmType.datatime(DateTime? value) {
+    if (value != null)
+      return EdmDateTime(value) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
+  factory EdmType.binary(String? value) {
+    if (value != null)
+      return EdmBinary(value) as EdmType<T>;
     else
       return EdmNull() as EdmType<T>;
   }
@@ -374,7 +394,7 @@ class EdmDateTime extends EdmType<DateTime> {
   String get json => 'Date(\/${value!.millisecondsSinceEpoch}\/)';
 
   @override
-  String get query => value!.toIso8601String();
+  String get query => value!.toUtc().toIso8601String();
 }
 
 abstract class ODataError implements Exception {
@@ -433,111 +453,84 @@ abstract class ODataEntity {
   Map<String, dynamic> toJson();
 }
 
+enum ODataFilterOperator {
+  Contains,
+  EndsWith,
+  EQ,
+  GE,
+  LE,
+  GT,
+  LT,
+  BT,
+  NB,
+  NE,
+  NotContains,
+  NotEndsWith,
+  NotStartsWith,
+  StartsWith
+}
+
 class ODataFilter {
-  final String _filter;
+  final String? path;
+  final ODataFilterOperator? operator;
+  final EdmType? value1;
+  final EdmType? value2;
+  final List<ODataFilter> filters;
+  final bool and;
 
-  static ODataFilterBuilder get builder {
-    return ODataFilterBuilder();
-  }
-
-  ODataFilter(this._filter);
-
-  @override
-  String toString() {
-    return this._filter;
-  }
-}
-
-abstract class _ODataFilterPart {
-  _ODataFilterPart();
-}
-
-class _ODataFilterPartBinary extends _ODataFilterPart {
-  final String _part;
-
-  _ODataFilterPartBinary(String property, String operation, String value)
-      : this._part = '$property $operation $value';
+  ODataFilter({
+    this.path,
+    this.operator,
+    this.value1,
+    this.value2,
+    this.filters = const [],
+    this.and = false,
+  });
 
   @override
   String toString() {
-    return _part;
-  }
-}
-
-class _ODataFilterPartLogic extends _ODataFilterPart {
-  final String _part;
-  final ODataFilter _filter;
-
-  _ODataFilterPartLogic(String logic, ODataFilter filter)
-      : this._part = '$logic',
-        this._filter = filter;
-
-  @override
-  String toString() {
-    return '$_part ($_filter)';
-  }
-}
-
-class ODataFilterBuilder {
-  List<_ODataFilterPart> _filter = [];
-
-  ODataFilterBuilder eq(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'eq', value.toString()));
-    return this;
+    final binary = and ? ' AND ' : ' OR ';
+    final hasCurrent = this.path != null && this.operator != null;
+    final hasBinary = this.filters.isNotEmpty && hasCurrent;
+    final filters = this.filters.map((e) => e.toString()).join(binary);
+    final current = hasCurrent ? _simpleCondition() : '';
+    return (current + (hasBinary ? binary : '') + filters).trim();
   }
 
-  ODataFilterBuilder ne(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'ne', value.toString()));
-    return this;
-  }
-
-  ODataFilterBuilder le(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'le', value.toString()));
-    return this;
-  }
-
-  ODataFilterBuilder lt(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'lt', value.toString()));
-    return this;
-  }
-
-  ODataFilterBuilder ge(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'ge', value.toString()));
-    return this;
-  }
-
-  ODataFilterBuilder gt(String name, EdmType value) {
-    _filter.add(_ODataFilterPartBinary(name, 'gt', value.toString()));
-    return this;
-  }
-
-  ODataFilterBuilder get and {
-    return this;
-  }
-
-  ODataFilterBuilder get or {
-    return this;
-  }
-
-  ODataFilterBuilder andGroup(ODataFilter filter) {
-    _filter.add(_ODataFilterPartLogic('and', filter));
-    return this;
-  }
-
-  ODataFilterBuilder orGroup(ODataFilter filter) {
-    _filter.add(_ODataFilterPartLogic('or', filter));
-    return this;
-  }
-
-  ODataFilter get build {
-    String filter = _filter.fold('', (previousValue, element) {
-      if (element is _ODataFilterPartBinary) {
-        previousValue = '$element $previousValue'.trim();
-      } else if (element is _ODataFilterPartLogic) {
-        previousValue = '($previousValue) $element'.trim();
-      }
-      return previousValue;
-    });
-    return ODataFilter(filter);
+  String _simpleCondition() {
+    final val1 = value1?.query ?? '';
+    final val2 = value1?.query ?? '';
+    switch (operator) {
+      case ODataFilterOperator.EQ:
+        return "$path EQ '$val1'";
+      case ODataFilterOperator.GT:
+        return "$path GT '$val1'";
+      case ODataFilterOperator.GE:
+        return "$path GE '$val1'";
+      case ODataFilterOperator.LE:
+        return "$path LE '$val1'";
+      case ODataFilterOperator.LT:
+        return "$path LT '$val1'";
+      case ODataFilterOperator.Contains:
+        return "contains($path,'$val1'";
+      case ODataFilterOperator.NotContains:
+        return "not contains($path,'$val1'";
+      case ODataFilterOperator.EndsWith:
+        return "endswith($path,'$val1'";
+      case ODataFilterOperator.StartsWith:
+        return "not endswith($path,'$val1'";
+      case ODataFilterOperator.StartsWith:
+        return "startswith($path,'$val1'";
+      case ODataFilterOperator.NotStartsWith:
+        return "not startswith($path,'$val1'";
+      case ODataFilterOperator.NE:
+        return "$path NE '$val1'";
+      case ODataFilterOperator.BT:
+        return "$path GE '$val1' AND $path LE '$val2'";
+      case ODataFilterOperator.NB:
+        return "$path LT '$val1' AND $path GT '$val2'";
+      default:
+        return '';
+    }
   }
 }
