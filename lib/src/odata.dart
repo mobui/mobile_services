@@ -306,14 +306,16 @@ abstract class EdmType<T> {
     else if (value is bool)
       return EdmBoolean(value) as EdmType<T>;
     else if (value is int)
-      return EdmBoolean(value == 0 ? false : true) as EdmType<T>;
-    else if (value is String) if (value == 'false') {
-      EdmBoolean(false) as EdmType<T>;
-    } else if (value == 'true')
-      EdmBoolean(true) as EdmType<T>;
-    else
-      EdmNull() as EdmType<T>;
-    return EdmBoolean(value == 'false' ? false : true) as EdmType<T>;
+      return EdmBoolean(value != 0) as EdmType<T>;
+    else if (value is String) {
+      if (value == 'false')
+        return EdmBoolean(false) as EdmType<T>;
+      else if (value == 'true')
+        return EdmBoolean(true) as EdmType<T>;
+      else
+        return EdmNull() as EdmType<T>;
+    } else
+      return EdmNull() as EdmType<T>;
   }
 
   factory EdmType.string(dynamic value) {
