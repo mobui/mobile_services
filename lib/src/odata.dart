@@ -207,7 +207,7 @@ class _ODataActionExecutable extends _ODataAction {
 
     // Complex
     final dataKey =
-        request.functionImport.isNotEmpty ? request.functionImport : 'result';
+        request.functionImport.isNotEmpty ? request.functionImport : 'results';
     try {
       final body = response.data as Map<String, dynamic>;
       if (!body.containsKey('d'))
