@@ -140,7 +140,7 @@ class _ODataActionExecutable extends _ODataAction {
             responseType: ResponseType.json,
             headers: {'Accept': 'application/json'}),
         queryParameters: request.queryParameters);
-    return _parseBody(request, response!.data);
+    return _parseBody(request, response);
   }
 
   ODataRequest _buildRequest() {
@@ -191,37 +191,48 @@ class _ODataActionExecutable extends _ODataAction {
     return result;
   }
 
-  ODataResult _parseBody(ODataRequest request, dynamic body) {
+  ODataResult _parseBody(ODataRequest request, Response? response) {
+    // Null
+    if (response == null) return ODataResult.none();
+    if (response.data == null) return ODataResult.none();
+
+    // Value
+    if (response.data is String) {
+      if ((response.data as String).isEmpty)
+        return ODataResult.none();
+      else {
+        return ODataResult.val(response.data);
+      }
+    }
+
+    // Complex
+    final dataKey =
+        request.functionImport.isNotEmpty ? request.functionImport : 'results';
     try {
-      final _jsonData = body as Map<String, dynamic>;
-      if (_jsonData is Map && _jsonData.containsKey('d')) {
-        final d = _jsonData['d']! as Map<String, dynamic>;
-        if (d is Map && d.containsKey('results') && d['results']! is List) {
-          return ODataResult.many((d['results']! as List)
-              .map((e) => e as Map<String, dynamic>)
-              .toList());
-        } else if (d is Map &&
-            request.functionImport.isNotEmpty &&
-            d.containsKey(request.functionImport)) {
-          final result = d[request.functionImport];
-          if (result is List) {
-            return ODataResult.many(
-                (result).map((e) => e as Map<String, dynamic>).toList());
-          } else if (result is Map) {
-            return ODataResult.single(result as Map<String, dynamic>);
-          } else {
-            throw FormatException(
-                'The response body is not Odata entity', body);
-          }
+      final body = response.data as Map<String, dynamic>;
+      if (!body.containsKey('d'))
+        throw FormatException('The response body is not Odata entity', body);
+      final d = body['d']! as Map<String, dynamic>;
+      if (d.containsKey(dataKey)) {
+        final result = d[dataKey];
+        if (result is List) {
+          return ODataResult.many(_toStringMapList(result));
+        } else if (result is Map) {
+          return ODataResult.single(result as Map<String, dynamic>);
         } else {
-          return ODataResult.single(d);
+          throw FormatException('The response body is not Odata entity', body);
         }
       } else {
-        throw FormatException('The response body is not Odata entity', body);
+        // Single
+        return ODataResult.single(d);
       }
     } on FormatException catch (err) {
       rethrow;
     }
+  }
+
+  List<Map<String, dynamic>> _toStringMapList(List<dynamic> list) {
+    return (list).map((e) => e as Map<String, dynamic>).toList();
   }
 }
 
@@ -289,43 +300,64 @@ abstract class EdmType<T> {
 
   EdmType._(this.value);
 
-  factory EdmType.boolean(bool? value) {
-    if (value != null)
+  factory EdmType.boolean(dynamic value) {
+    if (value == null)
+      return EdmNull() as EdmType<T>;
+    else if (value is bool)
       return EdmBoolean(value) as EdmType<T>;
-    else
+    else if (value is int)
+      return EdmBoolean(value != 0) as EdmType<T>;
+    else if (value is String) {
+      if (value == 'false')
+        return EdmBoolean(false) as EdmType<T>;
+      else if (value == 'true')
+        return EdmBoolean(true) as EdmType<T>;
+      else
+        return EdmNull() as EdmType<T>;
+    } else
       return EdmNull() as EdmType<T>;
   }
 
-  factory EdmType.string(String? value) {
-    if (value != null)
+  factory EdmType.string(dynamic value) {
+    if (value == null)
+      return EdmNull() as EdmType<T>;
+    else if (value is String) {
       return EdmString(value) as EdmType<T>;
-    else
-      return EdmNull() as EdmType<T>;
+    } else {
+      return EdmString(value.toString()) as EdmType<T>;
+    }
   }
 
-  factory EdmType.integer(int? value) {
-    if (value != null)
+  factory EdmType.integer(dynamic value) {
+    if (value is int)
       return EdmInteger(value) as EdmType<T>;
+    else if (value is String)
+      try {
+        return EdmInteger(int.parse(value)) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
+    else if (value is double)
+      return EdmInteger(value.round()) as EdmType<T>;
     else
       return EdmNull() as EdmType<T>;
   }
 
   factory EdmType.dateTime(dynamic value) {
     if (value is String) {
-      final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
-      final String? dateMills = dateRegExp.firstMatch(value)?.group(1);
-      if (dateMills == null) return EdmNull() as EdmType<T>;
-      final DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(
-              int.parse((dateMills)),
-              isUtc: true)
-          .toLocal();
-      return EdmDateTime(timestamp) as EdmType<T>;
+      try {
+        return EdmDateTime.parse(value) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
     } else if (value is DateTime)
       return EdmDateTime(value) as EdmType<T>;
-    else if (value) {
-      final DateTime timestamp =
-          DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
-      return EdmDateTime(timestamp) as EdmType<T>;
+    else if (value is int) {
+      try {
+        return EdmDateTime.fromInt(value) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
     } else
       return EdmNull() as EdmType<T>;
   }
@@ -408,6 +440,26 @@ class EdmDateTime extends EdmType<DateTime> {
 
   @override
   String get query => value!.toUtc().toIso8601String();
+
+  factory EdmDateTime.parse(String value) {
+    try {
+      EdmDateTime(DateTime.parse(value));
+    } catch (err) {}
+
+    final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
+    final String? dateMills = dateRegExp.firstMatch(value)?.group(1);
+    if (dateMills == null) throw FormatException("Invalid date format", value);
+    final timestamp =
+        DateTime.fromMillisecondsSinceEpoch(int.parse((dateMills)), isUtc: true)
+            .toLocal();
+    return EdmDateTime(timestamp);
+  }
+
+  factory EdmDateTime.fromInt(int value) {
+    final DateTime timestamp =
+        DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
+    return EdmDateTime(timestamp);
+  }
 }
 
 abstract class ODataError implements Exception {
