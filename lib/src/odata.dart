@@ -571,7 +571,7 @@ class ODataFilter {
 
   @override
   String toString() {
-    final binary = and ? ' AND ' : ' OR ';
+    final binary = and ? ' and ' : ' or ';
     final hasCurrent = this.path != null && this.operator != null;
     final hasBinary = this.filters.isNotEmpty && hasCurrent;
     final filters = this.filters.map((e) => e.toString()).join(binary);
@@ -584,15 +584,15 @@ class ODataFilter {
     final val2 = value1?.query ?? '';
     switch (operator) {
       case ODataFilterOperator.EQ:
-        return "$path EQ '$val1'";
+        return "$path eq '$val1'";
       case ODataFilterOperator.GT:
-        return "$path GT '$val1'";
+        return "$path gt '$val1'";
       case ODataFilterOperator.GE:
-        return "$path GE '$val1'";
+        return "$path ge '$val1'";
       case ODataFilterOperator.LE:
-        return "$path LE '$val1'";
+        return "$path le '$val1'";
       case ODataFilterOperator.LT:
-        return "$path LT '$val1'";
+        return "$path lt '$val1'";
       case ODataFilterOperator.Contains:
         return "contains($path,'$val1'";
       case ODataFilterOperator.NotContains:
@@ -606,11 +606,11 @@ class ODataFilter {
       case ODataFilterOperator.NotStartsWith:
         return "not startswith($path,'$val1'";
       case ODataFilterOperator.NE:
-        return "$path NE '$val1'";
+        return "$path ne '$val1'";
       case ODataFilterOperator.BT:
-        return "$path GE '$val1' AND $path LE '$val2'";
+        return "$path ge '$val1' and $path le '$val2'";
       case ODataFilterOperator.NB:
-        return "$path LT '$val1' AND $path GT '$val2'";
+        return "$path lt '$val1' and $path gt '$val2'";
       default:
         return '';
     }
