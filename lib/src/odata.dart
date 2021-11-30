@@ -54,8 +54,9 @@ class _ODataActionMethod extends _ODataAction {
   final MobileServicesClient _client;
   final ODataJson? _data;
   final MobileServicesClientType type;
+  final bool count;
 
-  _ODataActionMethod(this._method, this._data, this._client, this.type)
+  _ODataActionMethod(this._method, this._data, this._client, this.type, this.count)
       : super(null);
 
   _ODataActionEntitySet entitySet(String entitySet) {
@@ -180,6 +181,9 @@ class _ODataActionExecutable extends _ODataAction {
         result.client = current._client;
         result.data = current._data;
         result.method = current._method.toText();
+        if(current.count){
+          result.path = result.path + '/\$count';
+        }
       }
 
       if (current != null) {
@@ -218,13 +222,13 @@ class _ODataActionExecutable extends _ODataAction {
         if (result is List) {
           return ODataResult.many(_toStringMapList(result));
         } else if (result is Map) {
-          return ODataResult.single(result as Map<String, dynamic>);
+          return ODataResult.single(_removeResults(result as Map<String, dynamic>));
         } else {
           throw FormatException('The response body is not Odata entity', body);
         }
       } else {
         // Single
-        return ODataResult.single(d);
+        return ODataResult.single(_removeResults(d));
       }
     } on FormatException catch (err) {
       rethrow;
@@ -232,8 +236,19 @@ class _ODataActionExecutable extends _ODataAction {
   }
 
   List<Map<String, dynamic>> _toStringMapList(List<dynamic> list) {
-    return (list).map((e) => e as Map<String, dynamic>).toList();
+    return (list).map((e) => _removeResults(e as Map<String, dynamic>)).toList();
   }
+
+  Map<String, dynamic> _removeResults(Map<String, dynamic> val) {
+    return val.map((key, value) {
+      if(value is Map && value.containsKey('results') && value['results'] is List){
+        return MapEntry(key, (value['results'] as List).map((e) => _removeResults(e)).toList());
+      } else {
+        return MapEntry(key, value);
+      }
+    });
+  }
+
 }
 
 class ODataClient {
@@ -245,23 +260,25 @@ class ODataClient {
   }) : _client = client;
 
   _ODataActionMethod get(
-      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.GET, null, _client, type);
+      {MobileServicesClientType type = MobileServicesClientType.ODATA,
+        bool count = false
+      }) {
+    return _ODataActionMethod(Method.GET, null, _client, type, count);
   }
 
   _ODataActionMethod update(ODataJson data,
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.POST, data, _client, type);
+    return _ODataActionMethod(Method.POST, data, _client, type, false);
   }
 
   _ODataActionMethod create(ODataJson data,
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.POST, data, _client, type);
+    return _ODataActionMethod(Method.POST, data, _client, type,false);
   }
 
   _ODataActionMethod delete(
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.DELETE, null, _client, type);
+    return _ODataActionMethod(Method.DELETE, null, _client, type,false);
   }
 }
 
