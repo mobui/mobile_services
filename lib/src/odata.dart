@@ -456,7 +456,7 @@ class EdmDateTime extends EdmType<DateTime> {
   String get json => 'Date(\/${value!.millisecondsSinceEpoch}\/)';
 
   @override
-  String get query => value!.toUtc().toIso8601String();
+  String get query => 'datetime\'${value!.toLocal().toIso8601String()}\'';
 
   factory EdmDateTime.parse(String value) {
     try {

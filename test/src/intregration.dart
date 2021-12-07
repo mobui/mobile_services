@@ -20,16 +20,19 @@ main() {
         httpClient: Dio());
   });
 
-
   tearDown(() {
     client.close();
   });
 
   test('Integration test expand', () async {
+    final value =
+        await client.odata.get(count: true).entitySet('Waybills').execute();
+
     final x = await client.odata
         .get()
         .entitySet('Waybills')
-        .key({'Id': EdmType.string('00010214112020')}).expand([
+        .top(100)
+        .expand([
       'to_Items',
       'to_Items/to_Crop',
       'to_Items/to_Field',
@@ -45,9 +48,8 @@ main() {
   });
 
   test('Integration test count', () async {
-    final x = await client.odata
-        .get(count: true)
-        .entitySet('Waybills').execute();
+    final x =
+        await client.odata.get(count: true).entitySet('Waybills').execute();
     print(x);
   });
 }
