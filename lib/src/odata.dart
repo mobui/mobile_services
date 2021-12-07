@@ -388,7 +388,7 @@ abstract class EdmType<T> {
 
   dynamic get json => value!;
 
-  String get query => toString();
+  String get query => '\'${toString()}\'';
 
   @override
   String toString() {
@@ -447,6 +447,12 @@ class EdmBoolean extends EdmType<bool> {
 
 class EdmInteger extends EdmType<int> {
   EdmInteger(int value) : super._(value);
+
+  @override
+  String get query => '$value';
+
+  @override
+  String get json => '$value';
 }
 
 class EdmDateTime extends EdmType<DateTime> {
@@ -584,33 +590,33 @@ class ODataFilter {
     final val2 = value1?.query ?? '';
     switch (operator) {
       case ODataFilterOperator.EQ:
-        return "$path eq '$val1'";
+        return "$path eq $val1";
       case ODataFilterOperator.GT:
-        return "$path gt '$val1'";
+        return "$path gt $val1";
       case ODataFilterOperator.GE:
-        return "$path ge '$val1'";
+        return "$path ge $val1";
       case ODataFilterOperator.LE:
-        return "$path le '$val1'";
+        return "$path le $val1";
       case ODataFilterOperator.LT:
-        return "$path lt '$val1'";
+        return "$path lt $val1";
       case ODataFilterOperator.Contains:
-        return "contains($path,'$val1'";
+        return "contains($path, $val1";
       case ODataFilterOperator.NotContains:
-        return "not contains($path,'$val1'";
+        return "not contains($path, $val1";
       case ODataFilterOperator.EndsWith:
-        return "endswith($path,'$val1'";
+        return "endswith($path, $val1";
       case ODataFilterOperator.StartsWith:
-        return "not endswith($path,'$val1'";
+        return "not endswith($path,$val1";
       case ODataFilterOperator.StartsWith:
-        return "startswith($path,'$val1'";
+        return "startswith($path,$val1";
       case ODataFilterOperator.NotStartsWith:
-        return "not startswith($path,'$val1'";
+        return "not startswith($path,$val1";
       case ODataFilterOperator.NE:
-        return "$path ne '$val1'";
+        return "$path ne $val1";
       case ODataFilterOperator.BT:
-        return "$path ge '$val1' and $path le '$val2'";
+        return "$path ge $val1 and $path le $val2";
       case ODataFilterOperator.NB:
-        return "$path lt '$val1' and $path gt '$val2'";
+        return "$path lt $val1 and $path gt $val2";
       default:
         return '';
     }
