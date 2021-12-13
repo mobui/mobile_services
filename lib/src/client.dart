@@ -140,6 +140,7 @@ class BasicAuth extends MobileServicesAuth {
   BasicAuth(this._username, this._password);
 
   String get username => _username;
+
   String get password => _password;
 
   @override
@@ -166,8 +167,11 @@ class BasicAuthSMP extends BasicAuth {
   String get appcid => _appcid;
 
   @override
-  Map<String, String> get headers =>
-      super.headers..addAll({'X-SMP-APPCID': _appcid});
+  Map<String, String> get headers => super.headers
+    ..addAll({
+      'X-SMP-APPCID': _appcid,
+      'X-Requested-With': 'X',
+    });
 
   @override
   Map<String, dynamic> get json => super.json..addAll({'appcid': _appcid});
@@ -212,7 +216,11 @@ class MobileServicesProps {
     final techUsername = json['techUsername'] ?? '';
     final techPassword = json['techPassword'] ?? '';
     return MobileServicesProps(
-        endpoint: endpoint, appid: appid, withToken: withToken, techUsername: techUsername, techPassword: techPassword);
+        endpoint: endpoint,
+        appid: appid,
+        withToken: withToken,
+        techUsername: techUsername,
+        techPassword: techPassword);
   }
 
   String get registrationPath => '$endpoint/odata/applications/v4/$appid';
