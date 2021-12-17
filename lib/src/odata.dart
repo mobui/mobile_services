@@ -56,7 +56,8 @@ class _ODataActionMethod extends _ODataAction {
   final MobileServicesClientType type;
   final bool count;
 
-  _ODataActionMethod(this._method, this._data, this._client, this.type, this.count)
+  _ODataActionMethod(
+      this._method, this._data, this._client, this.type, this.count)
       : super(null);
 
   _ODataActionEntitySet entitySet(String entitySet) {
@@ -181,7 +182,7 @@ class _ODataActionExecutable extends _ODataAction {
         result.client = current._client;
         result.data = current._data;
         result.method = current._method.toText();
-        if(current.count){
+        if (current.count) {
           result.path = result.path + '/\$count';
         }
       }
@@ -222,7 +223,8 @@ class _ODataActionExecutable extends _ODataAction {
         if (result is List) {
           return ODataResult.many(_toStringMapList(result));
         } else if (result is Map) {
-          return ODataResult.single(_removeResults(result as Map<String, dynamic>));
+          return ODataResult.single(
+              _removeResults(result as Map<String, dynamic>));
         } else {
           throw FormatException('The response body is not Odata entity', body);
         }
@@ -236,19 +238,23 @@ class _ODataActionExecutable extends _ODataAction {
   }
 
   List<Map<String, dynamic>> _toStringMapList(List<dynamic> list) {
-    return (list).map((e) => _removeResults(e as Map<String, dynamic>)).toList();
+    return (list)
+        .map((e) => _removeResults(e as Map<String, dynamic>))
+        .toList();
   }
 
   Map<String, dynamic> _removeResults(Map<String, dynamic> val) {
     return val.map((key, value) {
-      if(value is Map && value.containsKey('results') && value['results'] is List){
-        return MapEntry(key, (value['results'] as List).map((e) => _removeResults(e)).toList());
+      if (value is Map &&
+          value.containsKey('results') &&
+          value['results'] is List) {
+        return MapEntry(key,
+            (value['results'] as List).map((e) => _removeResults(e)).toList());
       } else {
         return MapEntry(key, value);
       }
     });
   }
-
 }
 
 class ODataClient {
@@ -261,8 +267,7 @@ class ODataClient {
 
   _ODataActionMethod get(
       {MobileServicesClientType type = MobileServicesClientType.ODATA,
-        bool count = false
-      }) {
+      bool count = false}) {
     return _ODataActionMethod(Method.GET, null, _client, type, count);
   }
 
@@ -273,12 +278,12 @@ class ODataClient {
 
   _ODataActionMethod create(ODataJson data,
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.POST, data, _client, type,false);
+    return _ODataActionMethod(Method.POST, data, _client, type, false);
   }
 
   _ODataActionMethod delete(
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.DELETE, null, _client, type,false);
+    return _ODataActionMethod(Method.DELETE, null, _client, type, false);
   }
 }
 
@@ -459,14 +464,14 @@ class EdmDateTime extends EdmType<DateTime> {
   EdmDateTime(DateTime value) : super._(value);
 
   @override
-  String get json => 'Date(\/${value!.millisecondsSinceEpoch}\/)';
+  String get json => '\\/Date(${value!.millisecondsSinceEpoch})\\/';
 
   @override
   String get query => 'datetime\'${value!.toLocal().toIso8601String()}\'';
 
   factory EdmDateTime.parse(String value) {
     try {
-      EdmDateTime(DateTime.parse(value));
+      return EdmDateTime(DateTime.parse(value));
     } catch (err) {}
 
     final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
@@ -482,6 +487,42 @@ class EdmDateTime extends EdmType<DateTime> {
     final DateTime timestamp =
         DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
     return EdmDateTime(timestamp);
+  }
+}
+
+class EdmDateTimeOffset extends EdmType<DateTime> {
+  EdmDateTimeOffset(DateTime value) : super._(value);
+
+  @override
+  String get json => '\\/Date(${value!.toUtc().millisecondsSinceEpoch}+0000)\\/';
+
+  @override
+  String get query => 'datetimeoffset\'${value!.toUtc().toIso8601String()}\'';
+
+  factory EdmDateTimeOffset.parse(String value) {
+    try {
+      return EdmDateTimeOffset(DateTime.parse(value).toUtc());
+    } catch (err) {}
+
+    final RegExp dateRegExp = new RegExp(r"\\/Date\((\d*)([+-]?)?(\d*)?\)\\/");
+    final match = dateRegExp.firstMatch(value);
+    final String? dateMills = match?.group(1);
+    final String sign = match?.group(2) ?? '+';
+    final String offset = match?.group(3) ?? '0000';
+    if (dateMills == null) throw FormatException("Invalid date format", value);
+    final offsetInt =
+        int.parse(offset) * (sign == '-' ? -1 : 1) * 60 * 1000; // offset in ms
+    final dateTimeInt = int.parse(dateMills);
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(
+        dateTimeInt - offsetInt,
+        isUtc: true);
+    return EdmDateTimeOffset(timestamp);
+  }
+
+  factory EdmDateTimeOffset.fromInt(int value) {
+    final DateTime timestamp =
+        DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    return EdmDateTimeOffset(timestamp);
   }
 }
 
