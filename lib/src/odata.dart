@@ -495,7 +495,7 @@ class EdmDateTime extends EdmType<DateTime> {
       return EdmDateTime(DateTime.parse(value));
     } catch (err) {}
 
-    final RegExp dateRegExp = new RegExp(r"\/Date\((\d*)\)\/");
+    final RegExp dateRegExp = new RegExp(r"/Date\((\d*)\)/");
     final String? dateMills = dateRegExp.firstMatch(value)?.group(1);
     if (dateMills == null) throw FormatException("Invalid date format", value);
     final timestamp =
@@ -526,7 +526,7 @@ class EdmDateTimeOffset extends EdmType<DateTime> {
       return EdmDateTimeOffset(DateTime.parse(value).toUtc());
     } catch (err) {}
 
-    final RegExp dateRegExp = new RegExp(r"\\/Date\((\d*)([+-]?)?(\d*)?\)\\/");
+    final RegExp dateRegExp = new RegExp(r"/Date\((\d*)([+-]?)?(\d*)?\)/");
     final match = dateRegExp.firstMatch(value);
     final String? dateMills = match?.group(1);
     final String sign = match?.group(2) ?? '+';
