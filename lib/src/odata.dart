@@ -250,6 +250,8 @@ class _ODataActionExecutable extends _ODataAction {
           value['results'] is List) {
         return MapEntry(key,
             (value['results'] as List).map((e) => _removeResults(e)).toList());
+      } else if (value is Map) {
+        return MapEntry(key, _removeResults(value as Map<String, dynamic>));
       } else {
         return MapEntry(key, value);
       }
@@ -384,6 +386,25 @@ abstract class EdmType<T> {
       return EdmNull() as EdmType<T>;
   }
 
+  factory EdmType.dateTimeOffset(dynamic value) {
+    if (value is String) {
+      try {
+        return EdmDateTimeOffset.parse(value) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
+    } else if (value is DateTime)
+      return EdmDateTimeOffset(value.toUtc()) as EdmType<T>;
+    else if (value is int) {
+      try {
+        return EdmDateTimeOffset.fromInt(value) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
+    } else
+      return EdmNull() as EdmType<T>;
+  }
+
   factory EdmType.binary(String? value) {
     if (value != null)
       return EdmBinary(value) as EdmType<T>;
@@ -494,7 +515,8 @@ class EdmDateTimeOffset extends EdmType<DateTime> {
   EdmDateTimeOffset(DateTime value) : super._(value);
 
   @override
-  String get json => '\\/Date(${value!.toUtc().millisecondsSinceEpoch}+0000)\\/';
+  String get json =>
+      '\\/Date(${value!.toUtc().millisecondsSinceEpoch}+0000)\\/';
 
   @override
   String get query => 'datetimeoffset\'${value!.toUtc().toIso8601String()}\'';
