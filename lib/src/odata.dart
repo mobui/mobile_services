@@ -169,11 +169,11 @@ class _ODataActionExecutable extends _ODataAction {
         final key = current._key;
         if (key.length == 1) {
           final keyValue = key.values.toList().first.query;
-          result.path = '(\'$keyValue\')' + result.path;
+          result.path = '($keyValue)' + result.path;
         } else if (key.length > 1) {
           final keysValue = key.entries
-              .fold('', (prev, el) => '$prev, ${el.key}=\'${el.value.query}\'');
-          result.path = '(\'$keysValue\')' + result.path;
+              .fold('', (prev, el) => '$prev, ${el.key}=${el.value.query}');
+          result.path = '($keysValue)' + result.path;
         }
       }
 
@@ -414,7 +414,7 @@ abstract class EdmType<T> {
 
   dynamic get json => value!;
 
-  String get query => '\'${toString()}\'';
+  String get query => '${toString()}';
 
   @override
   String toString() {
@@ -465,6 +465,7 @@ class EdmBinary extends EdmType<String> {
 
 class EdmString extends EdmType<String> {
   EdmString(String value) : super._(value);
+  String get query => '\'$value\'';
 }
 
 class EdmBoolean extends EdmType<bool> {

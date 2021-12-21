@@ -26,7 +26,7 @@ main() {
       expect(value1, isNot(equals(value3)));
       expect(value1.value, 'Hello');
       expect(value1.json, 'Hello');
-      expect(value1.query, 'Hello');
+      expect(value1.query, '\'Hello\'');
       expect(value1.toString(), 'Hello');
     });
 
@@ -41,16 +41,6 @@ main() {
       expect(value1.json, true);
       expect(value1.query, 'true');
       expect(value1.toString(), 'true');
-    });
-  });
-
-  group('Create entity text', () {
-    test('', () {
-      try {
-        json.decode('qqweqw');
-      } on FormatException catch (err) {
-        print(err.source);
-      }
     });
   });
 
@@ -79,36 +69,6 @@ main() {
           props: props, auth: auth, httpClient: httpClient);
     });
 
-    test('', () {
-      try {
-        final result = client.odata
-            .get()
-            .entitySet('Hello')
-            .expand(['asasd', 'qweqweqw']).execute();
-      } on FormatException catch (err) {
-        print(err.source);
-      }
-    });
-
-    test('Import function', () {
-      try {
-        final result =
-            client.odata.get().functionImport("GetCurrentUser").execute();
-      } on FormatException catch (err) {
-        print(err.source);
-      }
-    });
-
-    test('', () {
-      try {
-        final x =  EdmType.dateTime('/Date(1615766400000)/');
-
-        print(x.value) ;
-      } on FormatException catch (err) {
-        print(err.source);
-      }
-    });
-
     test('Filter', () {
       final filter1 = ODataFilter(
           path: "asdas",
@@ -126,12 +86,21 @@ main() {
           filters: [filter1, filter2],
           and: true);
 
-      try {
-        final result =
-            client.odata.get().entitySet('Users').filter(filter3).execute();
-      } on FormatException catch (err) {
-        print(err.source);
-      }
+    });
+
+    test('EdmString', () {
+      final str = EdmType.string('hello');
+      expect(str.query, '\'hello\'');
+    });
+
+    test('EdmInteger', () {
+      final int = EdmType.integer(123);
+      expect(int.query, '123');
+    });
+
+    test('EdmBool', () {
+      final bool = EdmType.boolean(true);
+      expect(bool.query, 'true');
     });
   });
 }
