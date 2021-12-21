@@ -53,7 +53,7 @@ class Registration {
   Future<void> deleteConnection(String connectionId) async {
     final mainEntity = 'Connections';
     final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
-    await _client.delete().entitySet(mainEntity).key(key).execute();
+    await _client.delete(type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).execute();
   }
 
   Future<List<Capability>> getCapabilities(String connectionId) async {

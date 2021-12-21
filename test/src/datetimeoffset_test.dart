@@ -8,6 +8,12 @@ main() {
     expect(dto.value, DateTime.parse('2019-12-13 09:42:31.000Z'));
   });
 
+  test("Parse with before 1970", (){
+    final date = r'/Date(-1576230151000+0000)/';
+    final dto = EdmDateTimeOffset.parse(date);
+    expect(dto.value, DateTime.parse('1920-01-20 14:17:29.000Z'));
+  });
+
   test("Parse with +0060 offset", (){
     final date = r'/Date(1576230151000+0060)/';
     final dto = EdmDateTimeOffset.parse(date);
