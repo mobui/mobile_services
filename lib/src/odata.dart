@@ -511,10 +511,10 @@ class EdmDecimal extends EdmType<double> {
   }) : super._(value);
 
   @override
-  String get query => '${(value ?? 0).toStringAsFixed(precision)}';
+  String get query => '\'${(value ?? 0).toStringAsFixed(precision)}\'';
 
   @override
-  String get json => '${(value ?? 0).toStringAsFixed(precision)}';
+  String get json => '\'${(value ?? 0).toStringAsFixed(precision)}\'';
 }
 
 class EdmDateTime extends EdmType<DateTime> {
