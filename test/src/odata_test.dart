@@ -13,7 +13,7 @@ main() {
       endpoint: Utils.ENDPOINT,
       appid: Utils.APPID,
       techUsername: '',
-      techPassword: '');
+      techPassword: '', server: '');
   final auth = MobileServicesAuth.basic(username: 'hello', password: 'world');
 
   group('Edm type test', () {

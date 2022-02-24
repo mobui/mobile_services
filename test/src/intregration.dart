@@ -11,7 +11,7 @@ main() {
               'https://agroinvest-dev002-dev-com-agroinvest-mobile-farm.cfapps.eu10.hana.ondemand.com',
           appid: 'com.agroinvest.mobile.farm',
           techUsername: 'ZPM007',
-          techPassword: 'Service_2o21!@',
+          techPassword: 'Service_2o21!@', server: '',
         ),
         auth: MobileServicesAuth.basic(
           username: 'ZPM007',

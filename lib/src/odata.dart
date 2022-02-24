@@ -367,6 +367,22 @@ abstract class EdmType<T> {
       return EdmNull() as EdmType<T>;
   }
 
+  factory EdmType.decimal(dynamic value) {
+    if(value is double){
+      return EdmDecimal(value) as EdmType<T>;
+    }
+    else if (value is String)
+      try {
+        return EdmDecimal(double.parse(value)) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
+    else if (value is int)
+      return EdmDecimal(value.toDouble()) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
   factory EdmType.dateTime(dynamic value) {
     if (value is String) {
       try {
@@ -465,6 +481,7 @@ class EdmBinary extends EdmType<String> {
 
 class EdmString extends EdmType<String> {
   EdmString(String value) : super._(value);
+
   String get query => '\'$value\'';
 }
 
@@ -473,13 +490,31 @@ class EdmBoolean extends EdmType<bool> {
 }
 
 class EdmInteger extends EdmType<int> {
-  EdmInteger(int value) : super._(value);
+  EdmInteger(
+    int value,
+  ) : super._(value);
 
   @override
   String get query => '$value';
 
   @override
   String get json => '$value';
+}
+
+class EdmDecimal extends EdmType<double> {
+  final int scale;
+  final int precision;
+  EdmDecimal(
+    double value, {
+    this.scale = 13,
+    this.precision = 3,
+  }) : super._(value);
+
+  @override
+  String get query => '${(value ?? 0).toStringAsFixed(precision)}';
+
+  @override
+  String get json => '${(value ?? 0).toStringAsFixed(precision)}';
 }
 
 class EdmDateTime extends EdmType<DateTime> {
