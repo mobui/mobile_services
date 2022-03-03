@@ -133,16 +133,49 @@ class _ODataActionExecutable extends _ODataAction {
   Future<ODataResult> execute() async {
     final request = _buildRequest();
     final httpClient = request.client?._httpClient;
-    final response = await httpClient?.request(request.path,
-        data: request.data,
-        options: Options(
-            extra: {MobileServicesClient.TYPE_KEY: request.type},
-            method: request.method,
-            contentType: ContentType.json.toString(),
-            responseType: ResponseType.json,
-            headers: {'Accept': 'application/json'}),
-        queryParameters: request.queryParameters);
-    return _parseBody(request, response);
+    try {
+      final response = await httpClient?.request(request.path,
+          data: request.data,
+          options: Options(
+              extra: {MobileServicesClient.TYPE_KEY: request.type},
+              method: request.method,
+              contentType: ContentType.json.toString(),
+              responseType: ResponseType.json,
+              headers: {'Accept': 'application/json'}),
+          queryParameters: request.queryParameters);
+      return _parseBody(request, response);
+    } on DioError catch (err) {
+      if (_isODataError(err))
+        throw _dioErrorToOdataServerError(err);
+      else if (_isHttpError(err))
+        throw _dioErrorToOdataHttpError(err);
+      else
+        rethrow;
+    } catch (err) {
+      rethrow;
+    }
+  }
+
+  bool _isODataError(DioError err) {
+    return err.response != null &&
+        err.response?.data is Map &&
+        err.response?.data['error'] is Map;
+  }
+
+  bool _isHttpError(DioError err) {
+    return err.response != null;
+  }
+
+  ODataError _dioErrorToOdataServerError(DioError err) {
+    final errData = err.response?.data['error'] as Map;
+    return ODataError.server(
+        code: errData['code'], message: errData['message']['value']);
+  }
+
+  ODataError _dioErrorToOdataHttpError(DioError err) {
+    return ODataError.http(
+        message: err.response?.statusMessage ?? err.message,
+        statusCode: err.response?.statusCode ?? 0);
   }
 
   ODataRequest _buildRequest() {
@@ -368,10 +401,9 @@ abstract class EdmType<T> {
   }
 
   factory EdmType.decimal(dynamic value) {
-    if(value is double){
+    if (value is double) {
       return EdmDecimal(value) as EdmType<T>;
-    }
-    else if (value is String)
+    } else if (value is String)
       try {
         return EdmDecimal(double.parse(value)) as EdmType<T>;
       } catch (err) {
@@ -504,6 +536,7 @@ class EdmInteger extends EdmType<int> {
 class EdmDecimal extends EdmType<double> {
   final int scale;
   final int precision;
+
   EdmDecimal(
     double value, {
     this.scale = 13,
@@ -594,6 +627,9 @@ abstract class ODataError implements Exception {
 
   const factory ODataError.key() = ODataKeyError;
 
+  const factory ODataError.server(
+      {required String code, required String message}) = ODataServerError;
+
   const ODataError();
 }
 
@@ -631,6 +667,21 @@ class ODataKeyError extends ODataError {
   @override
   String toString() {
     return 'Keys is empty';
+  }
+}
+
+class ODataServerError extends ODataError {
+  final String code;
+  final String message;
+
+  const ODataServerError({
+    required this.code,
+    required this.message,
+  }) : super();
+
+  @override
+  String toString() {
+    return '$code: $message';
   }
 }
 
