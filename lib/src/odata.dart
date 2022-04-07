@@ -308,7 +308,7 @@ class ODataClient {
 
   _ODataActionMethod update(ODataJson data,
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.POST, data, _client, type, false);
+    return _ODataActionMethod(Method.PUT, data, _client, type, false);
   }
 
   _ODataActionMethod create(ODataJson data,
