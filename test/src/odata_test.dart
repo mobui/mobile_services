@@ -102,5 +102,11 @@ main() {
       final bool = EdmType.boolean(true);
       expect(bool.query, 'true');
     });
+
+    test('EdmDecimal', () {
+      final decimal = EdmType.decimal(24.594);
+      print(decimal.json);
+      expect(decimal.json, "\"24.594\"");
+    });
   });
 }
