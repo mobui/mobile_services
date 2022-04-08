@@ -256,6 +256,7 @@ class _ODataActionExecutable extends _ODataAction {
         if (result is List) {
           return ODataResult.many(_toStringMapList(result));
         } else if (result is Map) {
+
           return ODataResult.single(
               _removeResults(result as Map<String, dynamic>));
         } else {
@@ -271,10 +272,7 @@ class _ODataActionExecutable extends _ODataAction {
   }
 
   List<Map<String, dynamic>> _toStringMapList(List<dynamic> list) {
-    return (list)
-        .map((e){
-            return _removeResults(e as Map<String, dynamic>);
-        }).toList();
+    return (list).map((e)=> _removeResults(e as Map<String, dynamic>)).toList();
   }
 
   Map<String, dynamic> _removeResults(Map<String, dynamic> val) {
@@ -285,6 +283,9 @@ class _ODataActionExecutable extends _ODataAction {
         return MapEntry(key,
             (value['results'] as List).map((e) => _removeResults(e)).toList());
       } else if (value is Map) {
+        if(value.containsKey("__deferred")){
+          return MapEntry(key, null);
+        }
         return MapEntry(key, _removeResults(value as Map<String, dynamic>));
       } else {
         return MapEntry(key, value);
