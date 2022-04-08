@@ -106,7 +106,7 @@ main() {
     test('EdmDecimal', () {
       final decimal = EdmType.decimal(24.594);
       print(decimal.json);
-      expect(decimal.json, "\"24.594\"");
+      expect(decimal.json, '24.594');
     });
   });
 }
