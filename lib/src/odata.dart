@@ -739,7 +739,7 @@ class ODataFilter {
 
   String _simpleCondition() {
     final val1 = value1?.query ?? '';
-    final val2 = value1?.query ?? '';
+    final val2 = value2?.query ?? '';
     switch (operator) {
       case ODataFilterOperator.EQ:
         return "$path eq $val1";
