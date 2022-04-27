@@ -195,43 +195,48 @@ class BasicAuthSMPWithToken extends BasicAuthSMP {
 }
 
 class MobileServicesProps {
-  final String endpoint;
+  final String server;
   final String appid;
   final bool withToken;
   final String techUsername;
   final String techPassword;
+  final String endpoint;
 
   MobileServicesProps({
-    required this.endpoint,
+    required this.server,
     required this.appid,
     required this.techUsername,
     required this.techPassword,
+    this.endpoint = '',
     this.withToken = false,
   });
 
   factory MobileServicesProps.fromJson(Map<String, dynamic> json) {
-    final endpoint = json['endpoint'] ?? '';
+    final server = json['server'] ?? '';
     final appid = json['appid'] ?? '';
     final withToken = (json['withToken'] ?? false) as bool;
     final techUsername = json['techUsername'] ?? '';
     final techPassword = json['techPassword'] ?? '';
+    final endpoint = json['endpoint'] ?? '';
     return MobileServicesProps(
-        endpoint: endpoint,
+        server: server,
         appid: appid,
         withToken: withToken,
         techUsername: techUsername,
-        techPassword: techPassword);
+        techPassword: techPassword,
+        endpoint: endpoint,
+    );
   }
 
-  String get registrationPath => '$endpoint/odata/applications/v4/$appid';
+  String get registrationPath => '$server/odata/applications/v4/$appid';
 
-  String get dataPath => '$endpoint/$appid';
+  String get dataPath => '$server/${endpoint.isEmpty? appid: endpoint}';
 
   String get logPath =>
-      '$endpoint/mobileservices/application/$appid/clientlogs/v1/runtime/log/application/$appid';
+      '$server/mobileservices/application/$appid/clientlogs/v1/runtime/log/application/$appid';
 
   String get bundlePath =>
-      '$endpoint/mobileservices/application/$appid/bundles/v1/runtime/bundle/application/$appid/bundle/';
+      '$server/mobileservices/application/$appid/bundles/v1/runtime/bundle/application/$appid/bundle/';
 
   Map<MobileServicesClientType, String> get paths => {
         MobileServicesClientType.ODATA: dataPath,

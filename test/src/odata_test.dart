@@ -13,7 +13,7 @@ main() {
       endpoint: Utils.ENDPOINT,
       appid: Utils.APPID,
       techUsername: '',
-      techPassword: '');
+      techPassword: '', server: '');
   final auth = MobileServicesAuth.basic(username: 'hello', password: 'world');
 
   group('Edm type test', () {
@@ -101,6 +101,12 @@ main() {
     test('EdmBool', () {
       final bool = EdmType.boolean(true);
       expect(bool.query, 'true');
+    });
+
+    test('EdmDecimal', () {
+      final decimal = EdmType.decimal(24.594);
+      print(decimal.json);
+      expect(decimal.json, '24.594');
     });
   });
 }

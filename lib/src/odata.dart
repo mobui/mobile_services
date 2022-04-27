@@ -133,16 +133,49 @@ class _ODataActionExecutable extends _ODataAction {
   Future<ODataResult> execute() async {
     final request = _buildRequest();
     final httpClient = request.client?._httpClient;
-    final response = await httpClient?.request(request.path,
-        data: request.data,
-        options: Options(
-            extra: {MobileServicesClient.TYPE_KEY: request.type},
-            method: request.method,
-            contentType: ContentType.json.toString(),
-            responseType: ResponseType.json,
-            headers: {'Accept': 'application/json'}),
-        queryParameters: request.queryParameters);
-    return _parseBody(request, response);
+    try {
+      final response = await httpClient?.request(request.path,
+          data: request.data,
+          options: Options(
+              extra: {MobileServicesClient.TYPE_KEY: request.type},
+              method: request.method,
+              contentType: ContentType.json.toString(),
+              responseType: ResponseType.json,
+              headers: {'Accept': 'application/json'}),
+          queryParameters: request.queryParameters);
+      return _parseBody(request, response);
+    } on DioError catch (err) {
+      if (_isODataError(err))
+        throw _dioErrorToOdataServerError(err);
+      else if (_isHttpError(err))
+        throw _dioErrorToOdataHttpError(err);
+      else
+        rethrow;
+    } catch (err) {
+      rethrow;
+    }
+  }
+
+  bool _isODataError(DioError err) {
+    return err.response != null &&
+        err.response?.data is Map &&
+        err.response?.data['error'] is Map;
+  }
+
+  bool _isHttpError(DioError err) {
+    return err.response != null;
+  }
+
+  ODataError _dioErrorToOdataServerError(DioError err) {
+    final errData = err.response?.data['error'] as Map;
+    return ODataError.server(
+        code: errData['code'], message: errData['message']['value']);
+  }
+
+  ODataError _dioErrorToOdataHttpError(DioError err) {
+    return ODataError.http(
+        message: err.response?.statusMessage ?? err.message,
+        statusCode: err.response?.statusCode ?? 0);
   }
 
   ODataRequest _buildRequest() {
@@ -223,6 +256,7 @@ class _ODataActionExecutable extends _ODataAction {
         if (result is List) {
           return ODataResult.many(_toStringMapList(result));
         } else if (result is Map) {
+
           return ODataResult.single(
               _removeResults(result as Map<String, dynamic>));
         } else {
@@ -238,9 +272,7 @@ class _ODataActionExecutable extends _ODataAction {
   }
 
   List<Map<String, dynamic>> _toStringMapList(List<dynamic> list) {
-    return (list)
-        .map((e) => _removeResults(e as Map<String, dynamic>))
-        .toList();
+    return (list).map((e)=> _removeResults(e as Map<String, dynamic>)).toList();
   }
 
   Map<String, dynamic> _removeResults(Map<String, dynamic> val) {
@@ -251,6 +283,9 @@ class _ODataActionExecutable extends _ODataAction {
         return MapEntry(key,
             (value['results'] as List).map((e) => _removeResults(e)).toList());
       } else if (value is Map) {
+        if(value.containsKey("__deferred")){
+          return MapEntry(key, null);
+        }
         return MapEntry(key, _removeResults(value as Map<String, dynamic>));
       } else {
         return MapEntry(key, value);
@@ -275,7 +310,7 @@ class ODataClient {
 
   _ODataActionMethod update(ODataJson data,
       {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
-    return _ODataActionMethod(Method.POST, data, _client, type, false);
+    return _ODataActionMethod(Method.PUT, data, _client, type, false);
   }
 
   _ODataActionMethod create(ODataJson data,
@@ -363,6 +398,21 @@ abstract class EdmType<T> {
       }
     else if (value is double)
       return EdmInteger(value.round()) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
+  factory EdmType.decimal(dynamic value) {
+    if (value is double) {
+      return EdmDecimal(value) as EdmType<T>;
+    } else if (value is String)
+      try {
+        return EdmDecimal(double.parse(value)) as EdmType<T>;
+      } catch (err) {
+        return EdmNull() as EdmType<T>;
+      }
+    else if (value is int)
+      return EdmDecimal(value.toDouble()) as EdmType<T>;
     else
       return EdmNull() as EdmType<T>;
   }
@@ -465,6 +515,7 @@ class EdmBinary extends EdmType<String> {
 
 class EdmString extends EdmType<String> {
   EdmString(String value) : super._(value);
+
   String get query => '\'$value\'';
 }
 
@@ -473,13 +524,32 @@ class EdmBoolean extends EdmType<bool> {
 }
 
 class EdmInteger extends EdmType<int> {
-  EdmInteger(int value) : super._(value);
+  EdmInteger(
+    int value,
+  ) : super._(value);
 
   @override
   String get query => '$value';
 
   @override
   String get json => '$value';
+}
+
+class EdmDecimal extends EdmType<double> {
+  final int scale;
+  final int precision;
+
+  EdmDecimal(
+    double value, {
+    this.scale = 13,
+    this.precision = 3,
+  }) : super._(value);
+
+  @override
+  String get query => '${(value ?? 0).toStringAsFixed(precision)}';
+
+  @override
+  String get json => '${(value ?? 0).toStringAsFixed(precision)}';
 }
 
 class EdmDateTime extends EdmType<DateTime> {
@@ -559,6 +629,9 @@ abstract class ODataError implements Exception {
 
   const factory ODataError.key() = ODataKeyError;
 
+  const factory ODataError.server(
+      {required String code, required String message}) = ODataServerError;
+
   const ODataError();
 }
 
@@ -596,6 +669,21 @@ class ODataKeyError extends ODataError {
   @override
   String toString() {
     return 'Keys is empty';
+  }
+}
+
+class ODataServerError extends ODataError {
+  final String code;
+  final String message;
+
+  const ODataServerError({
+    required this.code,
+    required this.message,
+  }) : super();
+
+  @override
+  String toString() {
+    return '$code: $message';
   }
 }
 
@@ -651,7 +739,7 @@ class ODataFilter {
 
   String _simpleCondition() {
     final val1 = value1?.query ?? '';
-    final val2 = value1?.query ?? '';
+    final val2 = value2?.query ?? '';
     switch (operator) {
       case ODataFilterOperator.EQ:
         return "$path eq $val1";
