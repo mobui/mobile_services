@@ -614,7 +614,7 @@ class EdmDateTimeOffset extends EdmType<DateTime> {
 
   @override
   String get query => 'datetimeoffset\'${value!.toUtc().toIso8601String()}\'';
-
+  
   factory EdmDateTimeOffset.parse(String value) {
     try {
       return EdmDateTimeOffset(DateTime.parse(value).toUtc());
@@ -755,7 +755,9 @@ class ODataFilter {
     final binary = and ? ' and ' : ' or ';
     final hasCurrent = this.path != null && this.operator != null;
     final hasBinary = this.filters.isNotEmpty && hasCurrent;
-    final filters = this.filters.map((e) => e.toString()).join(binary);
+    final filters = this.filters.isNotEmpty
+        ? '(' + this.filters.map((e) => e.toString()).join(binary).trim() + ')'
+        : '';
     final current = hasCurrent ? _simpleCondition() : '';
     return (current + (hasBinary ? binary : '') + filters).trim();
   }

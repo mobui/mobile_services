@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_services/mobile_services.dart';
@@ -27,7 +29,7 @@ main() {
   test('Integration test expand', () async {
     final value =
         await client.odata.get(count: true).entitySet('Waybills').execute();
-
+    client.odata.create(json.decode("{}")).entitySet("Notifications").key({"ID": EdmType.string('10000024')}).navigationProperty('to_Comments').execute();
     final x = await client.odata
         .get()
         .entitySet('Waybills')
