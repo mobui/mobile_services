@@ -202,7 +202,7 @@ class MobileServicesProps {
   final String techPassword;
   final String endpoint;
 
-  MobileServicesProps({
+  const MobileServicesProps({
     required this.server,
     required this.appid,
     required this.techUsername,

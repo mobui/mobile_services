@@ -462,6 +462,13 @@ abstract class EdmType<T> {
       return EdmNull() as EdmType<T>;
   }
 
+  factory EdmType.guid(String? value) {
+    if (value != null)
+      return EdmGuid(value) as EdmType<T>;
+    else
+      return EdmNull() as EdmType<T>;
+  }
+
   dynamic get json => value!;
 
   String get query => '${toString()}';
@@ -505,7 +512,23 @@ class EdmBinary extends EdmType<String> {
   EdmBinary(String value) : super._(value);
 
   @override
-  String get json => throw UnimplementedError();
+  String get json => value!;
+  @override
+  String get query => 'binary\'$value\'';
+
+  @override
+  String toString() {
+    return super.toString();
+  }
+}
+
+class EdmGuid extends EdmType<String> {
+  EdmGuid(String value) : super._(value);
+
+  @override
+  String get json => value!;
+  @override
+  String get query => 'guid\'$value\'';
 
   @override
   String toString() {
