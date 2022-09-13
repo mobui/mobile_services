@@ -170,6 +170,7 @@ class BasicAuthSMP extends BasicAuth {
   Map<String, String> get headers => super.headers
     ..addAll({
       'X-SMP-APPCID': _appcid,
+      'X-SUP-APPCID': _appcid,
       'X-Requested-With': 'X',
     });
 
@@ -219,18 +220,18 @@ class MobileServicesProps {
     final techPassword = json['techPassword'] ?? '';
     final endpoint = json['endpoint'] ?? '';
     return MobileServicesProps(
-        server: server,
-        appid: appid,
-        withToken: withToken,
-        techUsername: techUsername,
-        techPassword: techPassword,
-        endpoint: endpoint,
+      server: server,
+      appid: appid,
+      withToken: withToken,
+      techUsername: techUsername,
+      techPassword: techPassword,
+      endpoint: endpoint,
     );
   }
 
   String get registrationPath => '$server/odata/applications/v4/$appid';
 
-  String get dataPath => '$server/${endpoint.isEmpty? appid: endpoint}';
+  String get dataPath => '$server/${endpoint.isEmpty ? appid : endpoint}';
 
   String get logPath =>
       '$server/mobileservices/application/$appid/clientlogs/v1/runtime/log/application/$appid';
