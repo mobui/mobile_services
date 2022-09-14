@@ -63,24 +63,24 @@ class _ODataActionMethod extends _ODataAction {
   _ODataActionMethod(this._method, this._data, this._client, this.type, this.count)
       : super(null);
 
-  _ODataActionEntitySet entitySet(String entitySet, { String? token}) {
-    return _ODataActionEntitySet(entitySet, token, this);
+  _ODataActionEntitySet entitySet(String entitySet ) {
+    return _ODataActionEntitySet(entitySet, this._client, this);
   }
 
   _ODataActionFunctionImport functionImport(String functionImport) {
-    return _ODataActionFunctionImport(functionImport, this);
+    return _ODataActionFunctionImport(functionImport, this._client, this);
   }
 }
 
 class _ODataActionEntitySet extends _ODataActionExecutable
     with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
   final String _entitySet;
-  final String? _token;
+  final MobileServicesClient _client;
 
-  _ODataActionEntitySet(this._entitySet, this._token, _ODataAction prev) : super(prev);
+  _ODataActionEntitySet(this._entitySet, this._client, _ODataAction prev) : super(prev);
 
   _ODataActionEntitySetToken withToken({String name = 'pAuthCode'}) {
-    return _ODataActionEntitySetToken(name, this);
+    return _ODataActionEntitySetToken(name, this._client, this);
   }
 
   _ODataActionEntityKey key(Map<String, EdmType> key) {
@@ -90,15 +90,17 @@ class _ODataActionEntitySet extends _ODataActionExecutable
 class _ODataActionEntitySetToken extends  _ODataActionExecutable
     with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
    final String _name;
+   final MobileServicesClient _client;
 
-   _ODataActionEntitySetToken(this._name, _ODataAction prev) : super( prev);
+   _ODataActionEntitySetToken(this._name, this._client,  _ODataAction prev) : super( prev);
 }
 
 
 class _ODataActionFunctionImport extends _ODataActionExecutable {
   final String _functionImport;
+  final MobileServicesClient _client;
 
-  _ODataActionFunctionImport(this._functionImport, _ODataAction prev)
+  _ODataActionFunctionImport(this._functionImport, this._client, _ODataAction prev)
       : super(prev);
 
   _ODataActionEntityOption options(Map<String, EdmType> options) {
@@ -202,8 +204,8 @@ class _ODataActionExecutable extends _ODataAction {
           result.path = '/' + current._entitySet + result.path;
       }
 
-      if (current is _ODataActionEntitySetToken && result.client?._auth is BasicAuthSMPWithToken) {
-        final token = (result.client?._auth as BasicAuthSMPWithToken).token;
+      if (current is _ODataActionEntitySetToken && current._client._auth is BasicAuthSMPWithToken) {
+        final token = (current._client._auth as BasicAuthSMPWithToken).token;
         result.path = '(${current._name}=$token)})/Set' + result.path;
       }
 
