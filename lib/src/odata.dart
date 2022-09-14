@@ -206,7 +206,7 @@ class _ODataActionExecutable extends _ODataAction {
 
       if (current is _ODataActionEntitySetToken && current._client._auth is BasicAuthSMPWithToken) {
         final token = (current._client._auth as BasicAuthSMPWithToken).token;
-        result.path = '(${current._name}=$token)})/Set' + result.path;
+        result.path = '(${current._name}=$token)/Set' + result.path;
       }
 
       if (current is _ODataActionEntityOption) {
