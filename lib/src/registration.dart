@@ -1,6 +1,24 @@
 part of '../mobile_services.dart';
 
-class Registration {
+abstract class IRegistration {
+  Future<Connection> createConnection(Connection connection);
+
+  Future<Connection> updateConnection(Connection connection);
+
+  Future<Connection> getConnection(
+    String connectionId, {
+    String? eTag,
+    bool withCapabilities = false,
+  });
+
+  Future<void> deleteConnection(String connectionId);
+
+  Future<List<Capability>> getCapabilities(String connectionId);
+
+  Future<void> deleteCapability(String connectionId, String capabilityCategory, String capabilityName);
+}
+
+class Registration implements IRegistration {
   final ODataClient _client;
 
   Registration({
@@ -9,26 +27,14 @@ class Registration {
 
   Future<Connection> createConnection(Connection connection) async {
     final mainEntity = 'Connections';
-    final odataJson = await _client
-        .create(connection.toJson(),
-            type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .execute();
+    final odataJson = await _client.create(connection.toJson(), type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).execute();
     return Connection.fromJson(odataJson.value);
   }
 
   Future<Connection> updateConnection(Connection connection) async {
     final mainEntity = 'Connections';
-    final key = {
-      'ApplicationConnectionId':
-      EdmType.string(connection.applicationConnectionId.json)
-    };
-    await _client
-        .update(connection.toJson(),
-            type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .key(key)
-        .execute();
+    final key = {'ApplicationConnectionId': EdmType.string(connection.applicationConnectionId.json)};
+    await _client.update(connection.toJson(), type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).execute();
     return connection;
   }
 
@@ -41,12 +47,7 @@ class Registration {
     final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
     final expand = [if (withCapabilities) 'Capability'];
 
-    final odataJson = await _client
-        .get(type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .key(key)
-        .expand(expand)
-        .execute();
+    final odataJson = await _client.get(type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).expand(expand).execute();
     return Connection.fromJson(odataJson.value);
   }
 
@@ -60,12 +61,7 @@ class Registration {
     final mainEntity = 'Connections';
     final navigationEntity = 'Capability';
     final key = {'ApplicationConnectionId': EdmType.string(connectionId)};
-    final odataJson = await _client
-        .delete(type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .key(key)
-        .navigationProperty(navigationEntity)
-        .execute();
+    final odataJson = await _client.delete(type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).navigationProperty(navigationEntity).execute();
     if (odataJson is ODataManyResult) {
       return odataJson.value.map((json) => Capability.fromJson(json)).toList();
     } else {
@@ -73,19 +69,14 @@ class Registration {
     }
   }
 
-  Future<Capability> getCapability(String connectionId,
-      String capabilityCategory, String capabilityName) async {
+  Future<Capability> getCapability(String connectionId, String capabilityCategory, String capabilityName) async {
     final mainEntity = 'Capabilities';
     final key = {
       'ApplicationConnectionId': EdmType.string(connectionId),
       'Category': EdmType.string(capabilityCategory),
       'CapabilityName': EdmType.string(capabilityName),
     };
-    final odataJson = await _client
-        .delete(type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .key(key)
-        .execute();
+    final odataJson = await _client.delete(type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).execute();
     if (odataJson is ODataSingleResult) {
       return Capability.fromJson(odataJson.value);
     } else {
@@ -93,19 +84,57 @@ class Registration {
     }
   }
 
-  Future<void> deleteCapability(String connectionId, String capabilityCategory,
-      String capabilityName) async {
+  Future<void> deleteCapability(String connectionId, String capabilityCategory, String capabilityName) async {
     final mainEntity = 'Capabilities';
     final key = {
       'ApplicationConnectionId': EdmType.string(connectionId),
       'Category': EdmType.string(capabilityCategory),
       'CapabilityName': EdmType.string(capabilityName),
     };
-    await _client
-        .delete(type: MobileServicesClientType.REGISTRATION)
-        .entitySet(mainEntity)
-        .key(key)
-        .execute();
+    await _client.delete(type: MobileServicesClientType.REGISTRATION).entitySet(mainEntity).key(key).execute();
+  }
+}
+
+class RegistrationFake implements IRegistration {
+  final ODataClient _client;
+
+  RegistrationFake({
+    required ODataClient client,
+  }) : _client = client;
+
+  @override
+  Future<Connection> createConnection(Connection connection) async {
+    final fakeApplicationConnectionId = 'OK';
+    await _client.serviceDocument(type: MobileServicesClientType.ODATA).serviceDocument().execute();
+    return connection.copyWith(applicationConnectionId: fakeApplicationConnectionId);
+  }
+
+  @override
+  Future<void> deleteCapability(String connectionId, String capabilityCategory, String capabilityName) async {
+    return;
+  }
+
+  @override
+  Future<void> deleteConnection(String connectionId) async {
+    return;
+  }
+
+  @override
+  Future<List<Capability>> getCapabilities(String connectionId) async {
+    return <Capability>[];
+  }
+
+  @override
+  Future<Connection> getConnection(String connectionId, {String? eTag, bool withCapabilities = false}) async {
+    return Connection.create(
+      applicationConnectionId: connectionId,
+      deviceType: DeviceType.Undefined,
+    );
+  }
+
+  @override
+  Future<Connection> updateConnection(Connection connection) async {
+    return connection;
   }
 }
 
@@ -189,30 +218,15 @@ class Connection extends ODataEntity {
     bool? passwordPolicyEnabled,
   }) {
     return Connection._(
-      deviceType: deviceType != null
-          ? EdmType.string(deviceType.toText())
-          : this.deviceType,
-      deviceModel:
-          deviceModel != null ? EdmType.string(deviceModel) : this.deviceModel,
-      apnsPushEnable: apnsPushEnable != null
-          ? EdmType.boolean(apnsPushEnable)
-          : this.apnsPushEnable,
-      apnsDeviceToken: apnsDeviceToken != null
-          ? EdmType.string(apnsDeviceToken)
-          : this.apnsDeviceToken,
-      androidGcmPushEnabled: androidGcmPushEnabled != null
-          ? EdmType.boolean(androidGcmPushEnabled)
-          : this.androidGcmPushEnabled,
-      androidGcmRegistrationId: androidGcmRegistrationId != null
-          ? EdmType.string(androidGcmRegistrationId)
-          : this.androidGcmRegistrationId,
+      deviceType: deviceType != null ? EdmType.string(deviceType.toText()) : this.deviceType,
+      deviceModel: deviceModel != null ? EdmType.string(deviceModel) : this.deviceModel,
+      apnsPushEnable: apnsPushEnable != null ? EdmType.boolean(apnsPushEnable) : this.apnsPushEnable,
+      apnsDeviceToken: apnsDeviceToken != null ? EdmType.string(apnsDeviceToken) : this.apnsDeviceToken,
+      androidGcmPushEnabled: androidGcmPushEnabled != null ? EdmType.boolean(androidGcmPushEnabled) : this.androidGcmPushEnabled,
+      androidGcmRegistrationId: androidGcmRegistrationId != null ? EdmType.string(androidGcmRegistrationId) : this.androidGcmRegistrationId,
       eTag: eTag != null ? EdmType.string(eTag) : this.eTag,
-      applicationConnectionId: applicationConnectionId != null
-          ? EdmType.string(applicationConnectionId)
-          : this.applicationConnectionId,
-      passwordPolicyEnabled: passwordPolicyEnabled != null
-          ? EdmType.boolean(passwordPolicyEnabled)
-          : this.passwordPolicyEnabled,
+      applicationConnectionId: applicationConnectionId != null ? EdmType.string(applicationConnectionId) : this.applicationConnectionId,
+      passwordPolicyEnabled: passwordPolicyEnabled != null ? EdmType.boolean(passwordPolicyEnabled) : this.passwordPolicyEnabled,
     );
   }
 }

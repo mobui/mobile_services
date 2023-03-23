@@ -25,19 +25,13 @@ class _ODataAction {
 
 mixin _ODataTop on _ODataAction {
   _ODataActionEntityOption top(int top) {
-    return _ODataActionEntityOption(
-        {'\$top': EdmType
-            .integer(top)
-            .query}, this);
+    return _ODataActionEntityOption({'\$top': EdmType.integer(top).query}, this);
   }
 }
 
 mixin _ODataSkip on _ODataAction {
   _ODataActionEntityOption skip(int skip) {
-    return _ODataActionEntityOption(
-        {'\$skip': EdmType
-            .integer(skip)
-            .query}, this);
+    return _ODataActionEntityOption({'\$skip': EdmType.integer(skip).query}, this);
   }
 }
 
@@ -60,20 +54,26 @@ class _ODataActionMethod extends _ODataAction {
   final MobileServicesClientType type;
   final bool count;
 
-  _ODataActionMethod(this._method, this._data, this._client, this.type, this.count)
-      : super(null);
+  _ODataActionMethod(this._method, this._data, this._client, this.type, this.count) : super(null);
 
-  _ODataActionEntitySet entitySet(String entitySet ) {
+  _ODataActionEntitySet entitySet(String entitySet) {
     return _ODataActionEntitySet(entitySet, this._client, this);
   }
 
   _ODataActionFunctionImport functionImport(String functionImport) {
-    return _ODataActionFunctionImport(functionImport, this._client, this);
+    return _ODataActionFunctionImport(functionImport, this);
+  }
+
+  _ODataActionServiceDocument serviceDocument() {
+    return _ODataActionServiceDocument();
   }
 }
 
-class _ODataActionEntitySet extends _ODataActionExecutable
-    with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
+class _ODataActionServiceDocument extends _ODataActionExecutable {
+  _ODataActionServiceDocument() : super(null);
+}
+
+class _ODataActionEntitySet extends _ODataActionExecutable with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
   final String _entitySet;
   final MobileServicesClient _client;
 
@@ -87,34 +87,28 @@ class _ODataActionEntitySet extends _ODataActionExecutable
     return _ODataActionEntityKey(key, this);
   }
 }
-class _ODataActionEntitySetToken extends  _ODataActionExecutable
-    with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
-   final String _name;
-   final MobileServicesClient _client;
 
-   _ODataActionEntitySetToken(this._name, this._client,  _ODataAction prev) : super( prev);
+class _ODataActionEntitySetToken extends _ODataActionExecutable with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
+  final String _name;
+  final MobileServicesClient _client;
+
+  _ODataActionEntitySetToken(this._name, this._client, _ODataAction prev) : super(prev);
 }
-
 
 class _ODataActionFunctionImport extends _ODataActionExecutable {
   final String _functionImport;
-  final MobileServicesClient _client;
 
-  _ODataActionFunctionImport(this._functionImport, this._client, _ODataAction prev)
-      : super(prev);
+  _ODataActionFunctionImport(this._functionImport, _ODataAction prev) : super(prev);
 
   _ODataActionEntityOption options(Map<String, EdmType> options) {
-    return _ODataActionEntityOption(
-        options.map((key, value) => MapEntry(key, value.query)), this);
+    return _ODataActionEntityOption(options.map((key, value) => MapEntry(key, value.query)), this);
   }
 }
 
-class _ODataActionNavigationProperty extends _ODataActionExecutable
-    with _ODataExpand {
+class _ODataActionNavigationProperty extends _ODataActionExecutable with _ODataExpand {
   final String _navigationProperty;
 
-  _ODataActionNavigationProperty(this._navigationProperty, _ODataAction prev)
-      : super(prev);
+  _ODataActionNavigationProperty(this._navigationProperty, _ODataAction prev) : super(prev);
 }
 
 class _ODataActionEntityKey extends _ODataActionExecutable with _ODataExpand {
@@ -127,8 +121,7 @@ class _ODataActionEntityKey extends _ODataActionExecutable with _ODataExpand {
   }
 }
 
-class _ODataActionEntityOption extends _ODataActionExecutable
-    with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
+class _ODataActionEntityOption extends _ODataActionExecutable with _ODataExpand, _ODataFilter, _ODataSkip, _ODataTop {
   final Map<String, String> _option;
 
   _ODataActionEntityOption(this._option, _ODataAction prev) : super(prev);
@@ -145,7 +138,7 @@ class ODataRequest {
 }
 
 class _ODataActionExecutable extends _ODataAction {
-  _ODataActionExecutable(_ODataAction prev) : super(prev);
+  _ODataActionExecutable(_ODataAction? prev) : super(prev);
 
   Future<ODataResult> execute() async {
     final request = _buildRequest();
@@ -174,9 +167,7 @@ class _ODataActionExecutable extends _ODataAction {
   }
 
   bool _isODataError(DioError err) {
-    return err.response != null &&
-        err.response?.data is Map &&
-        err.response?.data['error'] is Map;
+    return err.response != null && err.response?.data is Map && err.response?.data['error'] is Map;
   }
 
   bool _isHttpError(DioError err) {
@@ -185,14 +176,11 @@ class _ODataActionExecutable extends _ODataAction {
 
   ODataError _dioErrorToOdataServerError(DioError err) {
     final errData = err.response?.data['error'] as Map;
-    return ODataError.server(
-        code: errData['code'], message: errData['message']['value']);
+    return ODataError.server(code: errData['code'], message: errData['message']['value']);
   }
 
   ODataError _dioErrorToOdataHttpError(DioError err) {
-    return ODataError.http(
-        message: err.response?.statusMessage ?? err.message,
-        statusCode: err.response?.statusCode ?? 0);
+    return ODataError.http(message: err.response?.statusMessage ?? err.message, statusCode: err.response?.statusCode ?? 0);
   }
 
   ODataRequest _buildRequest() {
@@ -201,7 +189,7 @@ class _ODataActionExecutable extends _ODataAction {
     _ODataAction? current = this;
     while (true) {
       if (current is _ODataActionEntitySet) {
-          result.path = '/' + current._entitySet + result.path;
+        result.path = '/' + current._entitySet + result.path;
       }
 
       if (current is _ODataActionEntitySetToken && current._client._auth is BasicAuthSMPWithToken) {
@@ -222,17 +210,17 @@ class _ODataActionExecutable extends _ODataAction {
         result.path = '/' + current._navigationProperty + result.path;
       }
 
+      if(current is _ODataActionServiceDocument) {
+        result.path =  result.path;
+      }
+
       if (current is _ODataActionEntityKey) {
         final key = current._key;
         if (key.length == 1) {
-          final keyValue = key.values
-              .toList()
-              .first
-              .query;
+          final keyValue = key.values.toList().first.query;
           result.path = '($keyValue)' + result.path;
         } else if (key.length > 1) {
-          final keysValue = key.entries
-              .fold('', (prev, el) => '$prev, ${el.key}=${el.value.query}');
+          final keysValue = key.entries.fold('', (prev, el) => '$prev, ${el.key}=${el.value.query}');
           result.path = '($keysValue)' + result.path;
         }
       }
@@ -272,20 +260,17 @@ class _ODataActionExecutable extends _ODataAction {
     }
 
     // Complex
-    final dataKey =
-    request.functionImport.isNotEmpty ? request.functionImport : 'results';
+    final dataKey = request.functionImport.isNotEmpty ? request.functionImport : 'results';
     try {
       final body = response.data as Map<String, dynamic>;
-      if (!body.containsKey('d'))
-        throw FormatException('The response body is not Odata entity', body);
+      if (!body.containsKey('d')) throw FormatException('The response body is not Odata entity', body);
       final d = body['d']! as Map<String, dynamic>;
       if (d.containsKey(dataKey)) {
         final result = d[dataKey];
         if (result is List) {
           return ODataResult.many(_toStringMapList(result));
         } else if (result is Map) {
-          return ODataResult.single(
-              _removeResults(result as Map<String, dynamic>));
+          return ODataResult.single(_removeResults(result as Map<String, dynamic>));
         } else {
           throw FormatException('The response body is not Odata entity', body);
         }
@@ -293,7 +278,7 @@ class _ODataActionExecutable extends _ODataAction {
         // Single
         return ODataResult.single(_removeResults(d));
       }
-    } on FormatException catch (err) {
+    } on FormatException {
       rethrow;
     }
   }
@@ -304,11 +289,8 @@ class _ODataActionExecutable extends _ODataAction {
 
   Map<String, dynamic> _removeResults(Map<String, dynamic> val) {
     return val.map((key, value) {
-      if (value is Map &&
-          value.containsKey('results') &&
-          value['results'] is List) {
-        return MapEntry(key,
-            (value['results'] as List).map((e) => _removeResults(e)).toList());
+      if (value is Map && value.containsKey('results') && value['results'] is List) {
+        return MapEntry(key, (value['results'] as List).map((e) => _removeResults(e)).toList());
       } else if (value is Map) {
         if (value.containsKey("__deferred")) {
           return MapEntry(key, null);
@@ -323,24 +305,20 @@ class _ODataActionExecutable extends _ODataAction {
 
 class ODataClient {
   final MobileServicesClient _client;
-  Method _method = Method.UNDEFINED;
 
   ODataClient({
     required MobileServicesClient client,
   }) : _client = client;
 
-  _ODataActionMethod get({MobileServicesClientType type = MobileServicesClientType.ODATA,
-    bool count = false}) {
+  _ODataActionMethod get({MobileServicesClientType type = MobileServicesClientType.ODATA, bool count = false}) {
     return _ODataActionMethod(Method.GET, null, _client, type, count);
   }
 
-  _ODataActionMethod update(ODataJson data,
-      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+  _ODataActionMethod update(ODataJson data, {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
     return _ODataActionMethod(Method.PUT, data, _client, type, false);
   }
 
-  _ODataActionMethod create(ODataJson data,
-      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+  _ODataActionMethod create(ODataJson data, {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
     return _ODataActionMethod(Method.POST, data, _client, type, false);
   }
 
@@ -348,16 +326,17 @@ class ODataClient {
     return _ODataActionMethod(Method.DELETE, null, _client, type, false);
   }
 
-  _ODataActionMethod action(
-      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+  _ODataActionMethod action({MobileServicesClientType type = MobileServicesClientType.ODATA}) {
     return _ODataActionMethod(Method.POST, null, _client, type, false);
   }
 
-  _ODataActionMethod function(
-      {MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+  _ODataActionMethod function({MobileServicesClientType type = MobileServicesClientType.ODATA}) {
     return _ODataActionMethod(Method.GET, null, _client, type, false);
   }
 
+  _ODataActionMethod serviceDocument({MobileServicesClientType type = MobileServicesClientType.ODATA}) {
+    return _ODataActionMethod(Method.GET, null, _client, type, false);
+  }
 }
 
 abstract class ODataResult<T> {
@@ -516,8 +495,7 @@ abstract class EdmType<T> {
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other is EdmType<T> && value == other.value);
+    return identical(this, other) || (other is EdmType<T> && value == other.value);
   }
 
   @override
@@ -585,7 +563,9 @@ class EdmBoolean extends EdmType<bool> {
 }
 
 class EdmInteger extends EdmType<int> {
-  EdmInteger(int value,) : super._(value);
+  EdmInteger(
+    int value,
+  ) : super._(value);
 
   @override
   String get query => '$value';
@@ -598,7 +578,8 @@ class EdmDecimal extends EdmType<double> {
   final int scale;
   final int precision;
 
-  EdmDecimal(double value, {
+  EdmDecimal(
+    double value, {
     this.scale = 13,
     this.precision = 3,
   }) : super._(value);
@@ -627,15 +608,12 @@ class EdmDateTime extends EdmType<DateTime> {
     final RegExp dateRegExp = new RegExp(r"/Date\((-?\d*)\)/");
     final String? dateMills = dateRegExp.firstMatch(value)?.group(1);
     if (dateMills == null) throw FormatException("Invalid date format", value);
-    final timestamp =
-    DateTime.fromMillisecondsSinceEpoch(int.parse((dateMills)), isUtc: true)
-        .toLocal();
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(int.parse((dateMills)), isUtc: true).toLocal();
     return EdmDateTime(timestamp);
   }
 
   factory EdmDateTime.fromInt(int value) {
-    final DateTime timestamp =
-    DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
+    final DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(value, isUtc: true).toLocal();
     return EdmDateTime(timestamp);
   }
 }
@@ -644,8 +622,7 @@ class EdmDateTimeOffset extends EdmType<DateTime> {
   EdmDateTimeOffset(DateTime value) : super._(value);
 
   @override
-  String get json =>
-      '\\/Date(${value!.toUtc().millisecondsSinceEpoch}+0000)\\/';
+  String get json => '\\/Date(${value!.toUtc().millisecondsSinceEpoch}+0000)\\/';
 
   @override
   String get query => 'datetimeoffset\'${value!.toUtc().toIso8601String()}\'';
@@ -661,18 +638,14 @@ class EdmDateTimeOffset extends EdmType<DateTime> {
     final String sign = match?.group(2) ?? '+';
     final String offset = match?.group(3) ?? '0000';
     if (dateMills == null) throw FormatException("Invalid date format", value);
-    final offsetInt =
-        int.parse(offset) * (sign == '-' ? -1 : 1) * 60 * 1000; // offset in ms
+    final offsetInt = int.parse(offset) * (sign == '-' ? -1 : 1) * 60 * 1000; // offset in ms
     final dateTimeInt = int.parse(dateMills);
-    final timestamp = DateTime.fromMillisecondsSinceEpoch(
-        dateTimeInt - offsetInt,
-        isUtc: true);
+    final timestamp = DateTime.fromMillisecondsSinceEpoch(dateTimeInt - offsetInt, isUtc: true);
     return EdmDateTimeOffset(timestamp);
   }
 
   factory EdmDateTimeOffset.fromInt(int value) {
-    final DateTime timestamp =
-    DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    final DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
     return EdmDateTimeOffset(timestamp);
   }
 }
@@ -750,22 +723,7 @@ abstract class ODataEntity {
   Map<String, dynamic> toJson();
 }
 
-enum ODataFilterOperator {
-  Contains,
-  EndsWith,
-  EQ,
-  GE,
-  LE,
-  GT,
-  LT,
-  BT,
-  NB,
-  NE,
-  NotContains,
-  NotEndsWith,
-  NotStartsWith,
-  StartsWith
-}
+enum ODataFilterOperator { Contains, EndsWith, EQ, GE, LE, GT, LT, BT, NB, NE, NotContains, NotEndsWith, NotStartsWith, StartsWith }
 
 class ODataFilter {
   final String? path;
@@ -789,9 +747,7 @@ class ODataFilter {
     final binary = and ? ' and ' : ' or ';
     final hasCurrent = this.path != null && this.operator != null;
     final hasBinary = this.filters.isNotEmpty && hasCurrent;
-    final filters = this.filters.isNotEmpty
-        ? '(' + this.filters.map((e) => e.toString()).join(binary).trim() + ')'
-        : '';
+    final filters = this.filters.isNotEmpty ? '(' + this.filters.map((e) => e.toString()).join(binary).trim() + ')' : '';
     final current = hasCurrent ? _simpleCondition() : '';
     return (current + (hasBinary ? binary : '') + filters).trim();
   }
